@@ -1,0 +1,56 @@
+formatVersion: 1
+name: Ubuntu 18 with Tags
+version: 1
+inputs:
+  size:
+    type: string
+    enum:
+      - tiny
+      - small
+    default: small
+    description: VM Size
+    title: T-Shirt Size
+  platform:
+    type: string
+    enum:
+      - vsphere
+      - aws
+    default: vsphere
+    description: Deploy to which platform
+    title: Platform
+  env:
+    type: string
+    enum:
+      - dev
+    default: dev
+    description: There can only be DEV
+    title: Environment
+resources:
+  On-Prem_VM:
+    type: Cloud.Machine
+    properties:
+      name: onpremvm
+      image: Ubuntu18
+      flavor: '${input.size}'
+      constraints:
+        - tag: '${"hol.cloud.zone.platform:" + (input.platform) + ":soft"}'
+        - tag: '${"hol.cloud.zone.env:" + (input.env)}'
+      networks:
+        - network: '${resource.Network_1.id}'
+          assignment: static
+          assignPublicIpAddress: false
+      customizationSpec: CentOS
+  Cloud_VM:
+    type: Cloud.Machine
+    properties:
+      name: cloudvm
+      image: Ubuntu18
+      flavor: '${input.size}'
+      constraints:
+        - tag: '${"hol.cloud.zone.platform:" + (input.platform == "vsphere" ? "aws" : "aws") + ":hard"}'
+        - tag: '${"hol.cloud.zone.env:" + (input.env)}'
+  Network_1:
+    type: Cloud.Network
+    properties:
+      networkType: existing
+      name: vsphere-networks
