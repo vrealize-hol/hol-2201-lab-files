@@ -1,0 +1,43 @@
+name: Cloud VM With Form
+version: 1
+formatVersion: 1
+inputs:
+  image:
+    type: string
+    title: Image
+    enum:
+      - Ubuntu18
+      - Windows2019
+  hostname:
+    type: string
+    title: Hostname
+  costcenter:
+    type: string
+    title: Cost Center
+resources:
+  Cloud_vSphere_Machine_1:
+    type: Cloud.vSphere.Machine
+    properties:
+      image: '${input.image}'
+      cpuCount: 1
+      totalMemoryMB: 1024
+      constraints:
+        - tag: cloud:vsphere
+      tags:
+        - key: cost center
+          value: '${input.costcenter}'
+      networks:
+        - name: '${Cloud_vSphere_Network_1.name}'
+          network: '${resource.Cloud_vSphere_Network_1.id}'
+      cloudConfig: |
+        #cloudConfig
+        packages:
+        - httpd2
+        hostname: ${input.hostname}
+  Cloud_vSphere_Network_1:
+    type: Cloud.vSphere.Network
+    properties:
+      name: net-web
+      networkType: existing
+      constraints: 
+        - tag: net:vsphere

@@ -31,10 +31,13 @@ resources:
     properties:
       name: onpremvm
       image: Ubuntu18
+      tags:
+        - key: env
+          value: '${input.env}'
       flavor: '${input.size}'
       constraints:
-        - tag: '${"hol.cloud.zone.platform:" + (input.platform) + ":soft"}'
-        - tag: '${"hol.cloud.zone.env:" + (input.env)}'
+        - tag: '${"cloud:" + input.platform}'
+        - tag: '${"env:" + input.env + ":soft"}'
       networks:
         - network: '${resource.Network_1.id}'
           assignment: static
@@ -47,10 +50,11 @@ resources:
       image: Ubuntu18
       flavor: '${input.size}'
       constraints:
-        - tag: '${"hol.cloud.zone.platform:" + (input.platform == "vsphere" ? "aws" : "aws") + ":hard"}'
-        - tag: '${"hol.cloud.zone.env:" + (input.env)}'
+        - tag: 'cloud:aws'
+        - tag: '${"env:" + input.env + ":hard"}'
   Network_1:
     type: Cloud.Network
     properties:
       networkType: existing
-      name: vsphere-networks
+      constraints:
+        - tag: 'net:vsphere'
