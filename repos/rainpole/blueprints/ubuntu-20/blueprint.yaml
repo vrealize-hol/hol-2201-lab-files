@@ -1,0 +1,21 @@
+formatVersion: 1
+name: Ubuntu 20
+version: 1
+inputs: {}
+resources:
+  ubuntu:
+    type: Cloud.vSphere.Machine
+    properties:
+      image: Ubuntu20
+      flavor: small
+      constraints:
+        - tag: 'cloud:vsphere'
+      networks:
+        - network: '${resource.vsphere_network.id}'
+          assignment: static
+  vsphere_network:
+    type: Cloud.vSphere.Network
+    properties:
+      networkType: existing
+      constraints:
+        - tag: 'net:vsphere'
