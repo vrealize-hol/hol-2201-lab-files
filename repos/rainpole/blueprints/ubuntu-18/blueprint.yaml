@@ -1,5 +1,5 @@
 formatVersion: 1
-name: Ubuntu 18
+name: vSphere Machine
 version: 1
 inputs: {}
 resources:
