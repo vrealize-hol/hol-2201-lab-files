@@ -3,15 +3,12 @@ version: 1
 formatVersion: 1
 inputs: {}
 resources:
-  windowsserver:
+  windows:
     type: Cloud.Machine
-    metadata:
-      layoutPosition:
-        - 0
-        - 0
     properties:
       image: Windows2019
-      flavor: small
+      flavor: large
+      customizeGuestOs: false
       remoteAccess:
         authentication: usernamePassword
         username: Administrator
@@ -19,16 +16,25 @@ resources:
       cloudConfig: |
         #ps1_sysnative
           New-Item $env:SystemDrive\powershell_multipart.txt -type file -ErrorAction SilentlyContinue
-          Install-WindowsFeature -name Web-Server -IncludeManagementTools
+          Rename-Computer -NewName ${resource.windows.name}
+      
+          $adapter = Get-NetAdapter | ? { $_.Name -eq "Ethernet0" }
+
+          $adapter | Remove-NetIpAddress -Confirm:$false
+          $adapter | Remove-NetRoute -Confirm:$false
+          $adapter | New-NetIpAddress -IPAddress ${resource.windows.networks.address[0]} -PrefixLength ${resource.Cloud_vSphere_Network_1.prefixLength} -DefaultGateway ${resource.windows.networks.gateway[0]}
+          $adapter | Set-DnsClientServerAddress -ServerAddresses ${replace(replace(to_string(resource.windows.networks.dns[0]),"]",")"),"[","(")}
+
+          Start-Sleep 15
+
+          $creds = New-Object System.Management.Automation.PSCredential "administrator@corp.local",(ConvertTo-SecureString -String "VMware1!" -AsPlainText -Force)
+          Add-Computer -computerName ${resource.windows.name} -domainName "corp.local" -Credential $creds -Restart
       constraints:
         - tag: 'cloud:vsphere'
       networks:
         - network: '${resource.Cloud_vSphere_Network_1.id}'
+          assignment: static
   Cloud_vSphere_Network_1:
     type: Cloud.vSphere.Network
-    metadata:
-      layoutPosition:
-        - 1
-        - 0
     properties:
       networkType: existing
