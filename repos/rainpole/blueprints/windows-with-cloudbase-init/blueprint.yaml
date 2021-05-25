@@ -16,7 +16,6 @@ resources:
       cloudConfig: |
         #ps1_sysnative
           New-Item $env:SystemDrive\powershell_multipart.txt -type file -ErrorAction SilentlyContinue
-          Rename-Computer -NewName ${resource.windows.name}
       
           $adapter = Get-NetAdapter | ? { $_.Name -eq "Ethernet0" }
 
@@ -28,7 +27,7 @@ resources:
           Start-Sleep 15
 
           $creds = New-Object System.Management.Automation.PSCredential "administrator@corp.local",(ConvertTo-SecureString -String "VMware1!" -AsPlainText -Force)
-          Add-Computer -computerName ${resource.windows.name} -domainName "corp.local" -Credential $creds -Restart
+          Add-Computer -NewName ${self.resourceName} -domainName "corp.local" -Credential $creds -Restart
       constraints:
         - tag: 'cloud:vsphere'
       networks:
