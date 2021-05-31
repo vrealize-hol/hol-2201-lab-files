@@ -18,8 +18,3 @@ spec:
   settings:
     storage:
       defaultClass: lab-shared-storage
-    network:
-      services:
-        cidrBlocks: ["10.249.0.0/21"]
-      pods:
-        cidrBlocks: ["10.129.0.0/24"]
