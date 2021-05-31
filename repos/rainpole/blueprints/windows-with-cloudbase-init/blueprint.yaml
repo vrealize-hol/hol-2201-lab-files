@@ -16,7 +16,7 @@ resources:
       cloudConfig: |
         #ps1_sysnative
           New-Item $env:SystemDrive\powershell_multipart.txt -type file -ErrorAction SilentlyContinue
-      
+
           $adapter = Get-NetAdapter | ? { $_.Name -eq "Ethernet0" }
 
           $adapter | Remove-NetIpAddress -Confirm:$false
@@ -27,11 +27,11 @@ resources:
           Start-Sleep 15
 
           $creds = New-Object System.Management.Automation.PSCredential "administrator@corp.local",(ConvertTo-SecureString -String "VMware1!" -AsPlainText -Force)
-          Add-Computer -NewName ${self.resourceName} -domainName "corp.local" -Credential $creds -Restart
+          Add-Computer -NewName ${resource.windows.resourceName} -domainName "corp.local" -Credential $creds -Restart
       constraints:
-        - tag: 'cloud:vsphere'
+        - tag: "cloud:vsphere"
       networks:
-        - network: '${resource.Cloud_vSphere_Network_1.id}'
+        - network: "${resource.Cloud_vSphere_Network_1.id}"
           assignment: static
   Cloud_vSphere_Network_1:
     type: Cloud.vSphere.Network
