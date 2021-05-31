@@ -9,7 +9,7 @@ resources:
       image: Ubuntu20
       flavor: small
       constraints:
-        - tag: 'cloud:vsphere'
+        - tag: "cloud:vsphere"
       networks: []
       attachedDisks: '${map_to_object(slice(resource.disk[*].id, 0,2), "source")}'
   app1:
@@ -18,7 +18,7 @@ resources:
       image: Ubuntu20
       flavor: small
       constraints:
-        - tag: 'cloud:vsphere'
+        - tag: "cloud:vsphere"
       networks: []
       attachedDisks: '${map_to_object(slice(resource.disk[*].id, 2,4, "source")}'
   disk:
@@ -27,5 +27,5 @@ resources:
     properties:
       count: 4
       capacityGb: 1
-      constraints: 
+      constraints:
         - tag: storage:vsphere

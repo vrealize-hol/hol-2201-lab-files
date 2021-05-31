@@ -15,12 +15,12 @@ resources:
       image: Ubuntu20
       flavor: small
       constraints:
-        - tag: 'cloud:vsphere'
+        - tag: "cloud:vsphere"
       networks: []
       attachedDisks:
-        - source: '${resource.Cloud_vSphere_Disk_1.id}'
-        - source: '${resource.Cloud_vSphere_Disk_2.id}'
-        - source: '${resource.Cloud_vSphere_Disk_3.id}'
+        - source: "${resource.Cloud_vSphere_Disk_1.id}"
+        - source: "${resource.Cloud_vSphere_Disk_2.id}"
+        - source: "${resource.Cloud_vSphere_Disk_3.id}"
   Cloud_vSphere_Disk_2:
     type: Cloud.vSphere.Disk
     properties:
