@@ -1,0 +1,1 @@
+# Cloud Templates for STC Web Development

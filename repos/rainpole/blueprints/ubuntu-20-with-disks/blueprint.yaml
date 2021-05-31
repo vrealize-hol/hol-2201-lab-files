@@ -1,0 +1,35 @@
+formatVersion: 1
+name: Ubuntu 20 with Disks
+version: 1
+inputs: {}
+resources:
+  Cloud_vSphere_Disk_1:
+    type: Cloud.vSphere.Disk
+    properties:
+      capacityGb: 1
+      SCSIController: SCSI_Controller_3
+      unitNumber: 0
+  ubuntu:
+    type: Cloud.vSphere.Machine
+    properties:
+      image: Ubuntu20
+      flavor: small
+      constraints:
+        - tag: "cloud:vsphere"
+      networks: []
+      attachedDisks:
+        - source: "${resource.Cloud_vSphere_Disk_1.id}"
+        - source: "${resource.Cloud_vSphere_Disk_2.id}"
+        - source: "${resource.Cloud_vSphere_Disk_3.id}"
+  Cloud_vSphere_Disk_2:
+    type: Cloud.vSphere.Disk
+    properties:
+      capacityGb: 1
+      SCSIController: SCSI_Controller_3
+      unitNumber: 1
+  Cloud_vSphere_Disk_3:
+    type: Cloud.vSphere.Disk
+    properties:
+      capacityGb: 1
+      SCSIController: SCSI_Controller_2
+      unitNumber: 0

@@ -1,0 +1,31 @@
+formatVersion: 1
+name: Ubuntu 20 Cluster with Disks
+version: 1
+inputs: {}
+resources:
+  app0:
+    type: Cloud.vSphere.Machine
+    properties:
+      image: Ubuntu20
+      flavor: small
+      constraints:
+        - tag: "cloud:vsphere"
+      networks: []
+      attachedDisks: '${map_to_object(slice(resource.disk[*].id, 0,2), "source")}'
+  app1:
+    type: Cloud.vSphere.Machine
+    properties:
+      image: Ubuntu20
+      flavor: small
+      constraints:
+        - tag: "cloud:vsphere"
+      networks: []
+      attachedDisks: '${map_to_object(slice(resource.disk[*].id, 2,4, "source")}'
+  disk:
+    type: Cloud.Volume
+    allocatePerInstance: true
+    properties:
+      count: 4
+      capacityGb: 1
+      constraints:
+        - tag: storage:vsphere
