@@ -10,8 +10,9 @@
 # This blueprint will deploy 1 machine connected to a vSphere network and run script
 #************************************************************************************************************************************************************************************
 # Don't forget to give your cloud template a useful name!
-name: vSphere VM with Comments
 formatVersion: 1
+name: vSphere VM with Comments
+version: 1
 inputs:
   # Inputs section is where you define inputs that the user will be able to specify
   # There are a number of methods by which we can present inputs
