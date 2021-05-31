@@ -1,0 +1,25 @@
+apiVersion: run.tanzu.vmware.com/v1alpha1
+kind: TanzuKubernetesCluster
+metadata:
+  name: dev-project
+  namespace: rainpole
+spec:
+  distribution:
+    version: v1.20
+  topology:
+    controlPlane:
+      count: 1
+      class: best-effort-small
+      storageClass: lab-shared-storage
+    workers:
+      count: 1
+      class: best-effort-small
+      storageClass: lab-shared-storage
+  settings:
+    storage:
+      defaultClass: lab-shared-storage
+    network:
+      services:
+        cidrBlocks: ["10.249.0.0/21"]
+      pods:
+        cidrBlocks: ["10.129.0.0/24"]
