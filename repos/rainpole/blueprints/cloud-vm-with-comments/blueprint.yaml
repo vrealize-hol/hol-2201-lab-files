@@ -1,0 +1,60 @@
+# This cloud template shows various ways to enhace a cloud template via YAML with explanation
+# There are comments throughout for your reference
+# If you are totally new to YAML, then you can
+# visit https://yaml.org/ to get more familiar with it.
+# References:
+# https://docs.vmware.com/en/VMware-Cloud-Assembly/services/Using-and-Managing/GUID-86A64863-27AF-452B-A5CD-BC08ABF9E66A.html
+# https://docs.vmware.com/en/VMware-Cloud-Assembly/services/Using-and-Managing/GUID-12F0BC64-6391-4E5F-AA48-C5959024F3EB.html
+# There are cloud template code examples here:
+# https://docs.vmware.com/en/vRealize-Automation/8.4/Using-and-Managing-Cloud-Assembly/GUID-4717026E-D11A-48FE-93A9-E409A623C723.html
+# This blueprint will deploy 1 machine connected to a vSphere network and run script
+#************************************************************************************************************************************************************************************
+# Don't forget to give your cloud template a useful name!
+name: vSphere VM with Comments
+formatVersion: 1
+inputs:
+  # Inputs section is where you define inputs that the user will be able to specify
+  # There are a number of methods by which we can present inputs
+  # These can be defined to impact placement decisions and configuration. 
+  username:
+    type: string
+    # Inputs like username and password can be helpful for configurations within the OS
+    title: Username
+    description: Username
+    default: testUser
+  password:
+    type: string
+    title: Password
+    default: VMware1!
+    encrypted: true
+    description: Password for the given username
+resources:
+  demo-machine:
+    type: Cloud.vSphere.Machine
+    properties:
+      image: Ubuntu18
+      flavor: small
+      cloudConfig: |
+        ssh_pwauth: yes
+        chpasswd:
+          list: |
+            ${input.username}:${input.password}
+            expire: false
+        users:
+          - default
+          - name: ${input.username}
+            lock_passwd: false
+            sudo: ['ALL=(ALL) NOPASSWD:ALL']
+            groups: [wheel, sudo, admin]
+            shell: '/bin/bash'
+        runcmd:
+          - echo \"Defaults:${input.username}  !requiretty\" >> /etc/sudoers.d/${input.username}
+          - sh -c ${'\'echo \"Welcome to Hands-On Labs! This machine was requested by\" + input.username + \"\\n\\n\" > /etc/motd'}
+          
+      networks:
+        - network: '${resource.Cloud_vSphere_Network_1.id}'
+          assignment: static
+  Cloud_vSphere_Network_1:
+    type: Cloud.vSphere.Network
+    properties:
+      networkType: existing
