@@ -1,22 +1,22 @@
-# This cloud template shows various ways to enhace a cloud template via YAML with explanation
-# There are comments throughout for your reference
-# If you are totally new to YAML, then you can
-# visit https://yaml.org/ to get more familiar with it.
-# References:
-# https://docs.vmware.com/en/VMware-Cloud-Assembly/services/Using-and-Managing/GUID-86A64863-27AF-452B-A5CD-BC08ABF9E66A.html
-# https://docs.vmware.com/en/VMware-Cloud-Assembly/services/Using-and-Managing/GUID-12F0BC64-6391-4E5F-AA48-C5959024F3EB.html
-# There are cloud template code examples here:
-# https://docs.vmware.com/en/vRealize-Automation/8.4/Using-and-Managing-Cloud-Assembly/GUID-4717026E-D11A-48FE-93A9-E409A623C723.html
-# This blueprint will deploy 1 machine connected to a vSphere network and run script
-#************************************************************************************************************************************************************************************
+# This shows different ways to enhance a cloud template via YAML with explanations of the various parameter attributes          *
+# There are comments throughout for your refernce.                                                                              *
+# If you are totally new to YAML, then you can visit https://yaml.org/ to get more familiar with it.                            *
+# References:                                                                                                                   *
+# https://docs.vmware.com/en/VMware-Cloud-Assembly/services/Using-and-Managing/GUID-86A64863-27AF-452B-A5CD-BC08ABF9E66A.html   *
+# https://docs.vmware.com/en/VMware-Cloud-Assembly/services/Using-and-Managing/GUID-12F0BC64-6391-4E5F-AA48-C5959024F3EB.html   *
+# There are some cloud template code examples here:                                                                             *
+# https://docs.vmware.com/en/VMware-Cloud-Assembly/services/Using-and-Managing/GUID-4717026E-D11A-48FE-93A9-E409A623C723.html   *
+# This cloud template will deploy 1 machine connected to a vSphere network and run scripts to configure access.                 *
+#********************************************************************************************************************************
+
 # Don't forget to give your cloud template a useful name!
-formatVersion: 1
+version: 2
 name: vSphere VM with Comments
-version: 1
+formatVersion: 1
 inputs:
   # Inputs section is where you define inputs that the user will be able to specify
-  # There are a number of methods by which we can present inputs
-  # These can be defined to impact placement decisions and configuration. 
+  # There are a number of methods by which we can present inputs to the user. 
+  # Inputs can also influence placement decisions and configuration. 
   username:
     type: string
     # Inputs like username and password can be helpful for configurations within the OS
@@ -49,8 +49,8 @@ resources:
             groups: [wheel, sudo, admin]
             shell: '/bin/bash'
         runcmd:
-          - echo \"Defaults:${input.username}  !requiretty\" >> /etc/sudoers.d/${input.username}
-          - sh -c ${'\'echo \"Welcome to Hands-On Labs! This machine was requested by\" + input.username + \"\\n\\n\" > /etc/motd'}
+          - echo "Defaults:${input.username}  !requiretty" >> /etc/sudoers.d/${input.username}
+          - sh -c ${'\'echo \"Welcome to Hands-On Labs!  This machine was requested by ' + env.requestedBy + '\\n\\n\" > /etc/motd\''}
           
       networks:
         - network: '${resource.Cloud_vSphere_Network_1.id}'
