@@ -1,6 +1,7 @@
-formatVersion: 1
+version: 2
 name: Ubuntu 18 with Tags
-version: 1
+
+formatVersion: 1
 inputs:
   size:
     type: string
@@ -33,13 +34,13 @@ resources:
       image: Ubuntu18
       tags:
         - key: env
-          value: '${input.env}'
-      flavor: '${input.size}'
+          value: "${input.env}"
+      flavor: "${input.size}"
       constraints:
-        - tag: '${"cloud:" + input.platform}'
-        - tag: '${"env:" + input.env + ":soft"}'
+        - tag: '${"cloud:" + input.platform + ":soft"}'
+        - tag: '${"env:" + input.env}'
       networks:
-        - network: '${resource.Network_1.id}'
+        - network: "${resource.Network_1.id}"
           assignment: static
           assignPublicIpAddress: false
       customizationSpec: CentOS
@@ -48,13 +49,13 @@ resources:
     properties:
       name: cloudvm
       image: Ubuntu18
-      flavor: '${input.size}'
+      flavor: "${input.size}"
       constraints:
-        - tag: 'cloud:aws'
+        - tag: "cloud:aws"
         - tag: '${"env:" + input.env + ":hard"}'
   Network_1:
     type: Cloud.Network
     properties:
       networkType: existing
       constraints:
-        - tag: 'net:vsphere'
+        - tag: "net:vsphere"
