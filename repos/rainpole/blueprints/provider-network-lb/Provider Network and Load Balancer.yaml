@@ -1,3 +1,6 @@
+name: Provider Network and Load Balancer
+version: 1
+
 formatVersion: 1
 inputs: {}
 resources:

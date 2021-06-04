@@ -1,3 +1,6 @@
+name: NSX-T On-Demand Networking
+version: 1
+
 formatVersion: 1
 inputs: {}
 resources:
