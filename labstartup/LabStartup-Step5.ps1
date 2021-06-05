@@ -43,7 +43,7 @@ kubectl config use-context $VSPHERE_WITH_TANZU_CONTROL_PLANE_IP
 
 # Wait until it is applied
 Do {
-    kubectl apply -f $(Join-Path $LabStartupBaseFolder "build" "vsphere" "wcp" "rainpole" "tkc-dev-project.yaml")
+    kubectl apply -f $(Join-Path $LabStartupBaseFolder "build/vsphere/wcp/rainpole/tkc-dev-project.yaml")
     if ($LastExitCode -ne 0) {
         kubectl vsphere login --vsphere-username $VSPHERE_WITH_TANZU_USERNAME --server=$VSPHERE_WITH_TANZU_CONTROL_PLANE_IP --tanzu-kubernetes-cluster-name $VSPHERE_WITH_TANZU_CLUSTER_NAME --tanzu-kubernetes-cluster-namespace $VSPHERE_WITH_TANZU_CLUSTER_NAMESPACE --insecure-skip-tls-verify
         Continue
@@ -68,4 +68,4 @@ While (-Not $workernodes.Values.Contains("ready") -or $workernodes.Values.Contai
 
 # Deploy app
 kubectl config use-context $VSPHERE_WITH_TANZU_CLUSTER_NAME
-kubectl apply -f (Join-Path $LabStartupBaseFolder "labfiles" "HOL-2201-08" "Module 7" "cadvisor.yml")
+kubectl apply -f (Join-Path $LabStartupBaseFolder "labfiles/HOL-2201-08/Module 7/cadvisor.yml")
