@@ -22,7 +22,7 @@ spec:
         effect: NoSchedule
       containers:
       - name: cadvisor
-        image: google/cadvisor:latest
+        image: gitlab.hol:5050/hol/registry/cadvisor:latest
         resources:
           requests:
             memory: 250Mi
