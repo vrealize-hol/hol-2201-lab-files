@@ -1,0 +1,111 @@
+---
+project: HOL Project
+kind: PIPELINE
+name: MyDevPipeline
+icon: organization,left, is-teal
+enabled: true
+concurrency: 10
+options: [
+  GIT_TRIGGER]
+input:
+  GIT_BRANCH_NAME: ''
+  GIT_CHANGE_SUBJECT: ''
+  GIT_COMMIT_ID: ''
+  GIT_EVENT_DESCRIPTION: ''
+  GIT_EVENT_OWNER_NAME: ''
+  GIT_EVENT_TIMESTAMP: ''
+  GIT_REPO_HTTP_URL: ''
+  GIT_REPO_NAME: ''
+  GIT_SERVER_URL: ''
+_inputMeta:
+  GIT_SERVER_URL:
+    mandatory: false
+    description: ''
+  GIT_BRANCH_NAME:
+    mandatory: false
+    description: ''
+  GIT_REPO_HTTP_URL:
+    mandatory: true
+    description: ''
+  GIT_COMMIT_ID:
+    mandatory: false
+    description: ''
+  GIT_EVENT_TIMESTAMP:
+    mandatory: false
+    description: ''
+  GIT_EVENT_DESCRIPTION:
+    mandatory: false
+    description: ''
+  GIT_REPO_NAME:
+    mandatory: true
+    description: ''
+  GIT_EVENT_OWNER_NAME:
+    mandatory: false
+    description: ''
+  GIT_CHANGE_SUBJECT:
+    mandatory: false
+    description: ''
+workspace:
+  endpoint: ''
+  image: ''
+  registry: ''
+  path: ''
+  autoCloneForTrigger: false
+  limits:
+    memory: 512
+    cpu: 1.0
+stageOrder:
+- Development
+stages:
+  Development:
+    taskOrder:
+    - Deploy
+    - DeployCode
+    - Verify
+    - Destroy
+    tasks:
+      Destroy:
+        type: Blueprint
+        preCondition: ${Development.Verify.status} == "COMPLETED"
+        input:
+          action: DeleteDeployment
+          deploymentName: ${Development.Deploy.output.deploymentName}
+      Deploy:
+        type: Blueprint
+        input:
+          action: CreateDeployment
+          deploymentName: ''
+          blueprint: Ubuntu 18
+          version: '1'
+          parameters: {
+            }
+      Verify:
+        type: UserOperation
+        input:
+          approvers:
+          - holadmin
+          summary: Please Verify ${Development.Deploy.output.deploymentName}
+          description: Check the website at http://${Development.Deploy.output.deploymentDetails.resources.ubuntu.address}
+          sendemail: false
+          expiration: 3
+          expirationUnit: DAYS
+          pipelineName: ${name}
+          cancelPreviousPendingUserOp: false
+      DeployCode:
+        type: SSH
+        input:
+          script: |-
+            git config --global http.sslverify "false"
+            git clone ${input.GIT_REPO_HTTP_URL}
+            echo VMware1\! | sudo cp -TRv ${input.GIT_REPO_NAME}/ /var/www/html/
+          username: holuser
+          password: VMware1!
+          passphrase: ''
+          privatekey: ''
+          host: ${Development.Deploy.output.deploymentDetails.resources.ubuntu.address}
+          workingDirectory: ''
+          arguments: [
+            ]
+          environmentVariables: {
+            }
+          continueOnCommandFailure: false

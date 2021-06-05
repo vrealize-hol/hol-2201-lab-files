@@ -1,0 +1,47 @@
+---
+project: HOL Project
+kind: PIPELINE
+name: MyPipeline
+icon: organization,left, is-warning
+enabled: true
+concurrency: 10
+workspace:
+  endpoint: ''
+  image: ''
+  registry: ''
+  path: ''
+  autoCloneForTrigger: false
+  limits:
+    cpu: 1.0
+    memory: 512
+stageOrder:
+- Development
+stages:
+  Development:
+    taskOrder:
+    - Deployment Task
+    - Approval Task
+    tasks:
+      Deployment Task:
+        type: Blueprint
+        input:
+          action: CreateDeployment
+          deploymentName: ''
+          blueprint: Ubuntu 18
+          version: '1'
+          parameters: {
+            }
+      Approval Task:
+        type: UserOperation
+        input:
+          approvers:
+          - holadmin
+          approverGroups: [
+            ]
+          summary: Approval Task
+          description: This is an approval for ${Development.Deployment Task.output.deploymentName}.
+          sendemail: false
+          expiration: 3
+          expirationUnit: DAYS
+          pipelineName: ${name}
+          cancelPreviousPendingUserOp: false
