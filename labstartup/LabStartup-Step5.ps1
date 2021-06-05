@@ -43,6 +43,7 @@ kubectl config use-context $VSPHERE_WITH_TANZU_CONTROL_PLANE_IP
 
 # Wait until it is applied
 Do {
+    Write-Output "Login to Supervisor Cluster $VSPHERE_WITH_TANZU_CONTROL_PLANE_IP"
     kubectl apply -f $(Join-Path $LabStartupBaseFolder "build/vsphere/wcp/rainpole/tkc-dev-project.yaml")
     if ($LastExitCode -ne 0) {
         kubectl vsphere login --vsphere-username $VSPHERE_WITH_TANZU_USERNAME --server=$VSPHERE_WITH_TANZU_CONTROL_PLANE_IP --tanzu-kubernetes-cluster-name $VSPHERE_WITH_TANZU_CLUSTER_NAME --tanzu-kubernetes-cluster-namespace $VSPHERE_WITH_TANZU_CLUSTER_NAMESPACE --insecure-skip-tls-verify | Out-Null
@@ -56,6 +57,7 @@ Do {
 # Wait until 1 worker node is ready
 Do {
     Start-Sleep -Seconds 20
+    Write-Output "Wait for worker node"
     $tkc = kubectl get tkc/$VSPHERE_WITH_TANZU_CLUSTER_NAME -n $VSPHERE_WITH_TANZU_CLUSTER_NAMESPACE -o json | ConvertFrom-Json
     if ($LastExitCode -ne 0) {
         kubectl vsphere login --vsphere-username $VSPHERE_WITH_TANZU_USERNAME --server=$VSPHERE_WITH_TANZU_CONTROL_PLANE_IP --tanzu-kubernetes-cluster-name $VSPHERE_WITH_TANZU_CLUSTER_NAME --tanzu-kubernetes-cluster-namespace $VSPHERE_WITH_TANZU_CLUSTER_NAMESPACE --insecure-skip-tls-verify | Out-Null
@@ -64,7 +66,7 @@ Do {
     if ($tkc) { $workernodes = $tkc.status.nodeStatus | Get-Member | ForEach-Object { If ($_.Name -like "*workers*") { @{$_.Name = $tkc.status.nodeStatus.($_.Name) } } } }
     if ($workernodes) { $workernodes | Format-Table -HideTableHeaders -AutoSize | Out-String }
 } 
-While (-Not $workernodes.Values.Contains("ready") -or $workernodes.Values.Contains("notready"))
+While (-Not $workernodes -and (-Not $workernodes.Values.Contains("ready") -or $workernodes.Values.Contains("notready")))
 
 # Clean system pod
 $allpods = kubectl get pods --all-namespaces -o json | ConvertFrom-Json
