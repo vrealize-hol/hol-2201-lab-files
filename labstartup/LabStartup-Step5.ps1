@@ -80,7 +80,11 @@ $allpods.items | where-object { $_.status.phase -eq "Failed" -and $_.status.reas
 
 # Deploy app
 kubectl config use-context $VSPHERE_WITH_TANZU_CLUSTER_NAME
-kubectl apply -f (Join-Path $LabStartupBaseFolder "build/vsphere/wcp/rainpole/dev-project/cadvisor.yml")
+Do {
+    kubectl apply -f (Join-Path $LabStartupBaseFolder "build/vsphere/wcp/rainpole/dev-project/cadvisor.yml")
+    Start-Sleep -Seconds 10
+    $pods = kubectl get pods -n kube-system -o json | ConvertFrom-Json
+} While (($pods.items.metadata.name -like "cadvisor*").Count -eq 0)
 
 # Clean kubeconfig
 Remove-Item -Path "C:\Users\Administrator\.kube" -Recurse -Force -Confirm:$false
