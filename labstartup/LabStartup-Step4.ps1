@@ -8,5 +8,11 @@ Get-ChildItem -path ".\serverfiles" -Directory -Force | ForEach-Object {
 }
 
 #Deploy VRA
+Write-Output "Wait vRA first-bbot"
+Do {
+    LabStartup-Sleep $sleepSeconds
+    $vra_deploy = Invoke-Plink -remoteHost vr-automation.corp.local -login root -passwd VMware1! -command 'vracli status first-boot'
+    Write-Output "$(Get-Date) vRA First-Boot Status $vra_deploy"
+} Until ($vra_deploy -eq "First boot complete")
 Write-Output "Start vRealize Automation (/opt/scripts/deploy.sh)"
 cmd /c echo y | plink root@vr-automation.corp.local -pw VMware1! -noagent "nohup /opt/scripts/deploy.sh > /tmp/labstartup-deploy.out 2> /tmp/labstartup-deploy.err < /dev/null &"
