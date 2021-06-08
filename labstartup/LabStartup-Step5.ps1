@@ -31,7 +31,8 @@ Get-ChildItem -path ".\repos" -Directory -Force | ForEach-Object {
 
 ###
 # Clean kubeconfig
-Remove-Item -Path "C:\Users\Administrator\.kube" -Recurse -Force -Confirm:$false
+$KUBECTL_CONFIG_FOLDER = "C:\Users\Administrator\.kube"
+If (Test-Path -Path $KUBECTL_CONFIG_FOLDER) { Remove-Item -Path $KUBECTL_CONFIG_FOLDER -Recurse -Force -Confirm:$false }
 
 # Starting TKC cluster
 $VSPHERE_WITH_TANZU_CONTROL_PLANE_IP = '172.16.21.129'
@@ -70,6 +71,7 @@ Do {
         Start-Sleep -Seconds 20
         Continue
     }
+    $workernodes = $null
     if ($tkc) { $workernodes = $tkc.status.nodeStatus | Get-Member | ForEach-Object { If ($_.Name -like "*workers*") { @{$_.Name = $tkc.status.nodeStatus.($_.Name) } } } }
     if ($workernodes) { $workernodes | Format-Table -HideTableHeaders -AutoSize | Out-String }
 } 
@@ -90,4 +92,4 @@ Do {
 } While (($pods.items.metadata.name -like "cadvisor*").Count -eq 0)
 
 # Clean kubeconfig
-Remove-Item -Path "C:\Users\Administrator\.kube" -Recurse -Force -Confirm:$false
+Remove-Item -Path $KUBECTL_CONFIG_FOLDER -Recurse -Force -Confirm:$false
