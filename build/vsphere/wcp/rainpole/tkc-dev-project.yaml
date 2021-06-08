@@ -5,7 +5,7 @@ metadata:
   namespace: rainpole
 spec:
   distribution:
-    version: v1.20
+    version: v1.18
   topology:
     controlPlane:
       count: 1
