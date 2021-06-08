@@ -1,0 +1,67 @@
+formatVersion: 1
+name: Monitored Linux Server
+version: 1
+inputs:
+  machineName:
+    title: Server Name
+    type: string
+  flavor:
+    title: Server Size
+    type: string
+    enum:
+      - small
+      - medium
+      - large
+  image:
+    title: Operating System
+    type: string
+    enum:
+      - Ubuntu20
+      - Ubuntu18
+  projectCode:
+    title: Project Code
+    type: string
+  installAgent:
+    title: Install Telegraf Monitoring
+    type: boolean
+  agentRunAsUsername:
+    title: Telegraf Run User Account
+    type: string
+  agentRunAsPassword:
+    title: Telegraf Run User Password
+    type: string
+    encrypted: true
+resources:
+  linux:
+    type: Cloud.vSphere.Machine
+    properties:
+      machineName: '${input.machineName}'
+      image: '${input.image}'
+      flavor: '${input.flavor}'
+      folderName: 'Workloads/${env.projectName}'
+      agentRunAsUsername: '${to_string(input.installAgent) == "true" ? input.agentRunAsUsername :""}'
+      agentRunAsPassword: '${to_string(input.installAgent) == "true" ? input.agentRunAsPassword :""}'
+      agent: '${to_string(input.installAgent) == "true" ? "telegraf": ""}'
+      snapshotLimit: 1
+      tags:
+        - key: projectCode
+          value: '${input.projectCode}'
+        - key: vraProjectName
+          value: '${env.projectName}'
+      constraints:
+        - tag: 'cloud:vsphere'
+      networks:
+        - network: '${resource.network.id}'
+          assignment: static
+      cloudConfig: |
+        #cloud-config
+        runcmd:
+        - wget --no-check-certificate http://vr-loginsight.corp.local/api/v1/agent/install-packages/bin -O /tmp/li-agent.bin
+        - chmod +x /tmp/li-agent.bin
+        - sudo LIAGENT_SSL=no SERVERHOST=vr-loginsight.corp.local /tmp/li-agent.bin
+  network:
+    type: Cloud.vSphere.Network
+    properties:
+      networkType: existing
+      constraints:
+        - tag: 'net:vsphere'
