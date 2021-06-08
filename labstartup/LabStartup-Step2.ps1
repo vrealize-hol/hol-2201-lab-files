@@ -1,2 +1,2 @@
 Write-Output "Start vRA (/opt/scripts/deploy.sh)"
-echo y | plink root@vr-automation.corp.local -pw VMware1! -noagent "/opt/scripts/deploy.sh &"
+echo y | plink root@vr-automation.corp.local -pw VMware1! -noagent "nohup /opt/scripts/deploy.sh > /tmp/labstartup-deploy.out 2> /tmp/labstartup-deploy.err < /dev/null &"
