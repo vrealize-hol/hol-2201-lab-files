@@ -25,13 +25,13 @@ Foreach ($entry in $vCenters) {
                     }
                 }
                 Write-Output "Waiting for vCenter AUTOMATIC Services to start: $vcsaServicesStoppedLog"
-                $cisConnection | Disconnect-CisServer -Confirm:$false | Out-Null  2> $null
+                if ($cisConnection) { $cisConnection | Disconnect-CisServer -Confirm:$false | Out-Null  2> $null }
                 Start-Sleep 30
             }
         }
         Catch {
             Write-Output "An issue occured while vCenter services are started ($vcserver as $vcuser): $($Error[0].Exception)"
-            $cisConnection | Disconnect-CisServer -Confirm:$false | Out-Null  2> $null
+            if ($cisConnection) { $cisConnection | Disconnect-CisServer -Confirm:$false | Out-Null  2> $null }
             Start-Sleep 20
         }
     } Until ($cisConnection.IsConnected -and !$vcsaServicesStopped)
