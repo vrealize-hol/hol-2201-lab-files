@@ -1,0 +1,155 @@
+---
+project: Web Hosting
+kind: PIPELINE
+name: Deploy Sci-Tec Retail Application in Distributed Environment
+icon: organization,left, is-error
+enabled: true
+concurrency: 10
+input:
+  APP_TYPE: ''
+  APPLICATION_HOST_IP: ''
+  APPLICATION_HOST2_IP: ''
+  APPLICATION_HOST3_IP: ''
+  DB_HOST_IP: ''
+  GIT_REPO_HTTP_URL: ''
+  PASSWORD: ''
+  USER_NAME: ''
+_inputMeta:
+  APPLICATION_HOST3_IP:
+    mandatory: true
+    description: IP address of the node3
+  APPLICATION_HOST2_IP:
+    mandatory: true
+    description: IP address of the 3rd node of the application
+  DB_HOST_IP:
+    mandatory: true
+    description: IP address of the DB Host
+  APPLICATION_HOST_IP:
+    mandatory: true
+    description: IP address of the web application host
+  PASSWORD:
+    mandatory: true
+    description: Password for the application host
+  GIT_REPO_HTTP_URL:
+    mandatory: false
+    description: Local git repo url
+  USER_NAME:
+    mandatory: true
+    description: User name of the host to login
+  APP_TYPE:
+    mandatory: true
+    description: App type should be "SMALL", "MEDIUM", "LARGE"
+workspace:
+  endpoint: ''
+  image: ''
+  registry: ''
+  path: ''
+  autoCloneForTrigger: false
+  limits:
+    cpu: 1.0
+    memory: 512
+stageOrder:
+- Pull Code from GIT Repo
+stages:
+  Pull Code from GIT Repo:
+    taskOrder:
+    - Git Clone Repo
+    - Import MySQL Dump
+    - Configure Apache in Fronend Node1,Configure Apache in Fronend Node2,Configure Apache in Fronend
+      Node3
+    tasks:
+      Git Clone Repo:
+        type: SSH
+        input:
+          script: |
+            sudo rm -rf /tmp/stc-website
+            sudo git -c http.sslVerify=false clone https://gitlab.hol/hol/stc-website.git /tmp/stc-website
+          username: ${input.USER_NAME}
+          password: ${input.PASSWORD}
+          passphrase: ''
+          privatekey: ''
+          host: ${input.DB_HOST_IP}
+          workingDirectory: ''
+          arguments: [
+            ]
+          environmentVariables: {
+            }
+          continueOnCommandFailure: false
+      Import MySQL Dump:
+        type: SSH
+        input:
+          script: |-
+            sudo mysql -u root < /tmp/stc-website/configBackup/opencartdb.sql
+            sudo mysql -u root -e 'USE opencartdb'
+            sudo mysql -u root -e 'flush privileges'
+            sudo systemctl restart mysql
+          username: ${input.USER_NAME}
+          password: ${input.PASSWORD}
+          passphrase: ''
+          privatekey: ''
+          host: ${input.DB_HOST_IP}
+          workingDirectory: ''
+          arguments: [
+            ]
+          environmentVariables: {
+            }
+          continueOnCommandFailure: false
+      Configure Apache in Fronend Node3:
+        type: SSH
+        preCondition: ${input.APP_TYPE} == "LARGE"
+        input:
+          script: |2-
+            sudo sed -i "s/DB_DATABASE', 'opencart/DB_DATABASE', 'opencartdb/g" /var/www/opencart/config.php
+            sudo sed -i "s/DB_DATABASE', 'opencart/DB_DATABASE', 'opencartdb/g" /var/www/opencart/admin/config.php
+            sudo systemctl reload apache2
+            sudo systemctl restart apache2
+          username: ${input.USER_NAME}
+          password: ${input.PASSWORD}
+          passphrase: ''
+          privatekey: ''
+          host: ${input.APPLICATION_HOST3_IP}
+          workingDirectory: ''
+          arguments: [
+            ]
+          environmentVariables: {
+            }
+          continueOnCommandFailure: false
+      Configure Apache in Fronend Node2:
+        type: SSH
+        preCondition: ${input.APP_TYPE} == "MEDIUM"
+        input:
+          script: |2-
+            sudo sed -i "s/DB_DATABASE', 'opencart/DB_DATABASE', 'opencartdb/g" /var/www/opencart/config.php
+            sudo sed -i "s/DB_DATABASE', 'opencart/DB_DATABASE', 'opencartdb/g" /var/www/opencart/admin/config.php
+            sudo systemctl reload apache2
+            sudo systemctl restart apache2
+          username: ${input.USER_NAME}
+          password: ${input.PASSWORD}
+          passphrase: ''
+          privatekey: ''
+          host: ${input.APPLICATION_HOST2_IP}
+          workingDirectory: ''
+          arguments: [
+            ]
+          environmentVariables: {
+            }
+          continueOnCommandFailure: false
+      Configure Apache in Fronend Node1:
+        type: SSH
+        input:
+          script: |2-
+            sudo sed -i "s/DB_DATABASE', 'opencart/DB_DATABASE', 'opencartdb/g" /var/www/opencart/config.php
+            sudo sed -i "s/DB_DATABASE', 'opencart/DB_DATABASE', 'opencartdb/g" /var/www/opencart/admin/config.php
+            sudo systemctl reload apache2
+            sudo systemctl restart apache2
+          username: ${input.USER_NAME}
+          password: ${input.PASSWORD}
+          passphrase: ''
+          privatekey: ''
+          host: ${input.APPLICATION_HOST_IP}
+          workingDirectory: ''
+          arguments: [
+            ]
+          environmentVariables: {
+            }
+          continueOnCommandFailure: false
