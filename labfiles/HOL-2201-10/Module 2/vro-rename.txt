@@ -1,0 +1,18 @@
+var resourceNames = []
+var serverbase = customProps.get('machineName')
+if (vmNames.length > 1)
+{
+    for (i = 0; i < vmNames.length; i++) {
+    System.log("vRA Generated servername was:" + vmNames[i])
+    var serverName = serverbase + "_" + i
+    System.log("Generated servername is: " + serverName);
+    resourceNames.push(serverName)
+}
+}
+else
+{
+    System.log("vRA Generated servername was:" + vmNames[0])
+    System.log("Generated servername is: " + serverbase);
+    resourceNames.push(serverbase)
+}
+
