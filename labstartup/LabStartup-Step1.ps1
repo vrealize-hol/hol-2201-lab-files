@@ -1,4 +1,6 @@
 # wait for vcenter
+Write-VpodProgress "Checking vCenter Services" 'STARTING'
+
 Foreach ($entry in $vCenters) {
     ($vcserver, $type, $loginUser) = $entry.Split(":")
     $cisConnection = $null
