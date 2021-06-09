@@ -1,4 +1,10 @@
 Write-Output "Start vRealize Automation (/opt/scripts/deploy.sh)"
+Write-Output "Wait vRA first-boot"
+Do {
+    LabStartup-Sleep $sleepSeconds
+    $vra_deploy = Invoke-Plink -remoteHost vr-automation.corp.local -login root -passwd VMware1! -command 'vracli status first-boot'
+    Write-Output "$(Get-Date) vRA First-Boot Status $vra_deploy"
+} Until ($vra_deploy -eq "First boot complete")
 cmd /c echo y | plink root@vr-automation.corp.local -pw VMware1! -noagent "nohup /opt/scripts/deploy.sh > /tmp/labstartup-deploy.out 2> /tmp/labstartup-deploy.err < /dev/null &"
 
 Write-Output "Disable datastore storage usage alarm"
