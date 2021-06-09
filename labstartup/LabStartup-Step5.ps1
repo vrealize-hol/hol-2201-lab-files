@@ -73,7 +73,7 @@ Do {
     }
     $workernodes = $null
     if ($tkc) { $workernodes = $tkc.status.nodeStatus | Get-Member | ForEach-Object { If ($_.Name -like "*workers*") { @{$_.Name = $tkc.status.nodeStatus.($_.Name) } } } }
-    if ($workernodes) { $workernodes | Format-Table -HideTableHeaders -AutoSize | Out-String }
+    if ($workernodes) { ($workernodes | Format-Table -HideTableHeaders -AutoSize | Out-String).Trim() | Write-Output }
 } 
 While (-Not $workernodes -or -Not $workernodes.Values.Contains("ready") -or $workernodes.Values.Contains("notready"))
 
