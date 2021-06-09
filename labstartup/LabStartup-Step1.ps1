@@ -32,7 +32,7 @@ Foreach ($entry in $vCenters) {
             }
         }
         Catch {
-            Write-Output "An issue occured while vCenter services are started ($vcserver as $vcuser): $($Error[0].Exception)"
+            Write-Output "An issue occured while vCenter services are started ($vcserver as $vcuser): $($Error[0].Exception.Message)"
             if ($cisConnection) { $cisConnection | Disconnect-CisServer -Confirm:$false | Out-Null  2> $null }
             Start-Sleep 20
         }
