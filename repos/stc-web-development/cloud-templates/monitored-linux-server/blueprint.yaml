@@ -3,8 +3,18 @@ name: Monitored Linux Server
 version: 1
 inputs:
   machineName:
-    title: Server Name
+    title: Server name
     type: string
+  serverRole:
+    title: Server Role
+    type: string
+    oneOf:
+      - title: Web Server
+        const: web
+      - title: Database Server
+        const: sql
+      - title: Application Server
+        const: app
   flavor:
     title: Server Size
     type: string
@@ -27,15 +37,18 @@ inputs:
   agentRunAsUsername:
     title: Telegraf Run User Account
     type: string
+    default: holuser
   agentRunAsPassword:
     title: Telegraf Run User Password
     type: string
     encrypted: true
+    default: '${secret.password}'
 resources:
   linux:
     type: Cloud.vSphere.Machine
     properties:
       machineName: '${input.machineName}'
+      role: '${input.serverRole}'
       image: '${input.image}'
       flavor: '${input.flavor}'
       folderName: 'Workloads/${env.projectName}'
@@ -56,12 +69,12 @@ resources:
       cloudConfig: |
         #cloud-config
         runcmd:
-        - wget --no-check-certificate http://vr-loginsight.corp.local/api/v1/agent/install-packages/bin -O /tmp/li-agent.bin
-        - chmod +x /tmp/li-agent.bin
-        - sudo LIAGENT_SSL=no SERVERHOST=vr-loginsight.corp.local /tmp/li-agent.bin
+          - wget --no-check-certificate http://vr-loginsight.corp.local/api/v1/agent/packages/types/deb -O /tmp/li-agent.deb
+          - sudo LIAGENT_SSL=no SERVERHOST=vr-loginsight.corp.local LIAGENT_AUTOUPDATE=yes dpkg -i /tmp/li-agent.deb
   network:
-    type: Cloud.vSphere.Network
+    type: Cloud.NSX.Network
     properties:
       networkType: existing
       constraints:
-        - tag: 'net:vsphere'
+        - tag: 'net:nsxt'
+        - tag: 'env:dev'

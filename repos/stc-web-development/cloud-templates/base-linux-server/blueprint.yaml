@@ -6,7 +6,7 @@ inputs:
     title: Server Name
     type: string
   flavor:
-    title: Server Size
+    title: Server size
     type: string
     enum:
       - small
