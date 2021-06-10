@@ -4,7 +4,7 @@ if (vmNames.length > 1)
 {
     for (i = 0; i < vmNames.length; i++) {
     System.log("vRA Generated servername was:" + vmNames[i])
-    var serverName = serverbase + "_" + i
+    var serverName = serverbase + "_" + (i + 1)
     System.log("Generated servername is: " + serverName);
     resourceNames.push(serverName)
 }
@@ -15,4 +15,3 @@ else
     System.log("Generated servername is: " + serverbase);
     resourceNames.push(serverbase)
 }
-
