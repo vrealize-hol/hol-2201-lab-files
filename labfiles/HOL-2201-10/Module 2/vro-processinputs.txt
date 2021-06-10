@@ -1,0 +1,28 @@
+function dumpProperties(props,lvl){
+         var keys = props.keys;
+         var prefix = ""
+     for (var i=0; i<lvl; i++){
+                   prefix = prefix + "";
+          }
+          for (k in keys){
+                 var key = keys[k];
+                 var value = props.get(keys[k])
+                 if ("Properties" == System.getObjectType(value)){
+                  System.log(prefix + key + "[")
+                  dumpProperties(value,(lvl+2));
+                  System.log(prefix+ "]")
+                 } else{
+                   System.log( prefix + key + ":" + value)
+                 }
+                 }
+}
+
+dumpProperties(inputProperties, 0)
+
+var customProps = inputProperties.get("customProperties");
+var resourceNames = inputProperties.get("resourceNames");
+
+
+
+
+
