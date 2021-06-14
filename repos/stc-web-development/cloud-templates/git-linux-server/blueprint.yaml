@@ -1,5 +1,5 @@
 formatVersion: 1
-name: Base Linux Server
+name: Git-Triggered Linux Server
 version: 1
 inputs:
   flavor:
