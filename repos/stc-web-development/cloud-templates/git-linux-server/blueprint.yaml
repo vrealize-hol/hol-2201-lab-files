@@ -1,0 +1,44 @@
+formatVersion: 1
+name: Base Linux Server
+version: 1
+inputs:
+  flavor:
+    title: Server size
+    type: string
+    enum:
+      - small
+      - medium
+      - large
+  image:
+    title: Operating System
+    type: string
+    enum:
+      - Ubuntu20
+      - Ubuntu18
+  projectCode:
+    title: Project Code
+    type: string
+resources:
+  linux:
+    type: Cloud.vSphere.Machine
+    properties:
+      image: '${input.image}'
+      flavor: '${input.flavor}'
+      folderName: 'Workloads/${env.projectName}'
+      snapshotLimit: 1
+      tags:
+        - key: projectCode
+          value: '${input.projectCode}'
+        - key: vraProjectName
+          value: '${env.projectName}'
+      constraints:
+        - tag: 'cloud:vsphere'
+      networks:
+        - network: '${resource.network.id}'
+          assignment: static
+  network:
+    type: Cloud.vSphere.Network
+    properties:
+      networkType: existing
+      constraints:
+        - tag: 'net:vsphere'
