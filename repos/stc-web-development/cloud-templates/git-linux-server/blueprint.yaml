@@ -36,6 +36,12 @@ resources:
       networks:
         - network: '${resource.network.id}'
           assignment: static
+      cloudConfig: |
+        #cloud-config
+        
+        runcmd:
+          - sudo systemctl stop nginx
+          - sudo systemctl disable nginx
   network:
     type: Cloud.vSphere.Network
     properties:
