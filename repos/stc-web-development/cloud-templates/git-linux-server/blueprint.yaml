@@ -43,6 +43,7 @@ resources:
           - sudo systemctl stop nginx
           - sudo systemctl disable nginx
           - sudo sed -e "s/Require local/#Require local/g" -i /etc/apache2/mods-enabled/status.conf
+          - sudo systemctl restart apache2
   network:
     type: Cloud.vSphere.Network
     properties:
