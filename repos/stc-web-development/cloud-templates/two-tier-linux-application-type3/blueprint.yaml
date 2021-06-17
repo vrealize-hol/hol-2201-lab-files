@@ -145,7 +145,6 @@ resources:
           assignment: static
       cloudConfig: |
         #cloud-config
-        #cloud-config
         runcmd:
           - sudo systemctl stop nginx
           - sudo systemctl disable nginx
