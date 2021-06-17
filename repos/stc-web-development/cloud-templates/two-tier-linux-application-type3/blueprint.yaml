@@ -115,6 +115,9 @@ resources:
       cloudConfig: |
         #cloud-config
         runcmd:
+          - sudo systemctl stop nginx
+          - sudo systemctl disable nginx
+          - sudo sed -e "s/Require local/#Require local/g" -i /etc/apache2/mods-enabled/status.conf
           - wget --no-check-certificate http://vr-loginsight.corp.local/api/v1/agent/packages/types/deb -O /tmp/li-agent.deb
           - sudo LIAGENT_SSL=no SERVERHOST=vr-loginsight.corp.local LIAGENT_AUTOUPDATE=yes dpkg -i /tmp/li-agent.deb
   tier2_linux:
@@ -142,7 +145,11 @@ resources:
           assignment: static
       cloudConfig: |
         #cloud-config
+        #cloud-config
         runcmd:
+          - sudo systemctl stop nginx
+          - sudo systemctl disable nginx
+          - sudo sed -e "s/Require local/#Require local/g" -i /etc/apache2/mods-enabled/status.conf
           - wget --no-check-certificate http://vr-loginsight.corp.local/api/v1/agent/packages/types/deb -O /tmp/li-agent.deb
           - sudo LIAGENT_SSL=no SERVERHOST=vr-loginsight.corp.local LIAGENT_AUTOUPDATE=yes dpkg -i /tmp/li-agent.deb
   network:
