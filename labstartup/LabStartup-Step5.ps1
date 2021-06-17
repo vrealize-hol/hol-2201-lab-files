@@ -31,7 +31,8 @@ Get-ChildItem -path ".\repos" -Directory -Force | ForEach-Object {
 
 ###
 # Clean kubeconfig
-Remove-Item -Path "C:\Users\Administrator\.kube" -Recurse -Force -Confirm:$false
+$KUBECTL_CONFIG_FOLDER = "C:\Users\Administrator\.kube"
+If (Test-Path -Path $KUBECTL_CONFIG_FOLDER) { Remove-Item -Path $KUBECTL_CONFIG_FOLDER -Recurse -Force -Confirm:$false }
 
 # Starting TKC cluster
 $VSPHERE_WITH_TANZU_CONTROL_PLANE_IP = '172.16.21.129'
@@ -43,14 +44,15 @@ $ENV:KUBECTL_VSPHERE_PASSWORD = 'VMware1!'
 # Connect to Supervisor cluster
 Write-Output "Login to Supervisor Cluster $VSPHERE_WITH_TANZU_CONTROL_PLANE_IP"
 kubectl vsphere login --vsphere-username $VSPHERE_WITH_TANZU_USERNAME --server=$VSPHERE_WITH_TANZU_CONTROL_PLANE_IP --tanzu-kubernetes-cluster-name $VSPHERE_WITH_TANZU_CLUSTER_NAME --tanzu-kubernetes-cluster-namespace $VSPHERE_WITH_TANZU_CLUSTER_NAMESPACE --insecure-skip-tls-verify | Out-Null
-kubectl config use-context $VSPHERE_WITH_TANZU_CONTROL_PLANE_IP
 
 # Wait until it is applied
 Do {
     Write-Output "Update TKC cluster"
-    kubectl apply -f $(Join-Path $LabStartupBaseFolder "build/vsphere/wcp/rainpole/tkc-dev-project.yaml")
+    kubectl config use-context $VSPHERE_WITH_TANZU_CONTROL_PLANE_IP | Out-String | Write-Output
+    kubectl apply -f $(Join-Path $LabStartupBaseFolder "build/vsphere/wcp/rainpole/tkc-dev-project.yaml") | Out-String | Write-Output
     if ($LastExitCode -ne 0) {
         kubectl vsphere login --vsphere-username $VSPHERE_WITH_TANZU_USERNAME --server=$VSPHERE_WITH_TANZU_CONTROL_PLANE_IP --tanzu-kubernetes-cluster-name $VSPHERE_WITH_TANZU_CLUSTER_NAME --tanzu-kubernetes-cluster-namespace $VSPHERE_WITH_TANZU_CLUSTER_NAMESPACE --insecure-skip-tls-verify | Out-Null
+        Start-Sleep -Seconds 20
         Continue
     }
     Start-Sleep -Seconds 20
@@ -62,15 +64,18 @@ Do {
 Do {
     Start-Sleep -Seconds 20
     Write-Output "Wait for worker node"
+    kubectl config use-context $VSPHERE_WITH_TANZU_CONTROL_PLANE_IP | Out-String | Write-Output
     $tkc = kubectl get tkc/$VSPHERE_WITH_TANZU_CLUSTER_NAME -n $VSPHERE_WITH_TANZU_CLUSTER_NAMESPACE -o json | ConvertFrom-Json
     if ($LastExitCode -ne 0) {
         kubectl vsphere login --vsphere-username $VSPHERE_WITH_TANZU_USERNAME --server=$VSPHERE_WITH_TANZU_CONTROL_PLANE_IP --tanzu-kubernetes-cluster-name $VSPHERE_WITH_TANZU_CLUSTER_NAME --tanzu-kubernetes-cluster-namespace $VSPHERE_WITH_TANZU_CLUSTER_NAMESPACE --insecure-skip-tls-verify | Out-Null
+        Start-Sleep -Seconds 20
         Continue
     }
+    $workernodes = $null
     if ($tkc) { $workernodes = $tkc.status.nodeStatus | Get-Member | ForEach-Object { If ($_.Name -like "*workers*") { @{$_.Name = $tkc.status.nodeStatus.($_.Name) } } } }
-    if ($workernodes) { $workernodes | Format-Table -HideTableHeaders -AutoSize | Out-String }
+    if ($workernodes) { ($workernodes | Format-Table -HideTableHeaders -AutoSize | Out-String).Trim() | Write-Output }
 } 
-While (-Not $workernodes -and (-Not $workernodes.Values.Contains("ready") -or $workernodes.Values.Contains("notready")))
+While (-Not $workernodes -or -Not $workernodes.Values.Contains("ready") -or $workernodes.Values.Contains("notready"))
 
 # Clean system pod
 $allpods = kubectl get pods --all-namespaces -o json | ConvertFrom-Json
@@ -87,4 +92,4 @@ Do {
 } While (($pods.items.metadata.name -like "cadvisor*").Count -eq 0)
 
 # Clean kubeconfig
-Remove-Item -Path "C:\Users\Administrator\.kube" -Recurse -Force -Confirm:$false
+Remove-Item -Path $KUBECTL_CONFIG_FOLDER -Recurse -Force -Confirm:$false

@@ -1,4 +1,6 @@
 # wait for vcenter
+Write-VpodProgress "Checking vCenter Services" 'STARTING'
+
 Foreach ($entry in $vCenters) {
     ($vcserver, $type, $loginUser) = $entry.Split(":")
     $cisConnection = $null
@@ -9,28 +11,36 @@ Foreach ($entry in $vCenters) {
             if (!$cisConnection.IsConnected) {
                 $cisConnection = Connect-CisServer -Server $vcserver -User $vcuser -Password $password -ErrorAction Stop 2> $null
             }
-            Write-Output "vAPI Service found: $((Get-CisService).Count)"
+            $vapi_service = (Get-CisService).Count
+            Write-Output "vAPI Service found: $vapi_service"
+            if ($vapi_service -lt 1) { Continue }
 
             $applianceService = Get-CisService com.vmware.appliance.vmon.service
-            $vcsaServicesStopped = $applianceService.list_details().Values | Where-Object { $_.startup_type -eq "AUTOMATIC" -and $_.state -ne "STARTED" -and $_.health -ne "HEALTHY" }
-            if ($vcsaServicesStopped) { 
-                $vcsaServicesStopped | Format-Table -Property name_key, state, health | Write-Output
-                $cisConnection | Disconnect-CisServer -Confirm:$false | Out-Null  2> $null
+            $vcsaServicesStopped = $applianceService.list_details().GetEnumerator() | Where-Object { $_.Value.startup_type -eq "AUTOMATIC" -and $_.Value.state -ne "STARTED" -and $_.Value.health -ne "HEALTHY" }
+            if ($vcsaServicesStopped) {
+                $vcsaServicesStoppedLog = ""
+                $vcsaServicesStopped | ForEach-Object {
+                    $vcsaServicesStoppedLog += "$($_.Key) ($($_.Value.state)), "
+                    if ($_.Value.startup_type -eq "AUTOMATIC" -and $_.Value.state -eq "STOPPED") {
+                        Write-Output "Start Automatic service '$($_.Key)'"
+                        $applianceService.start($_.Key)
+                    }
+                }
+                Write-Output "Waiting for vCenter AUTOMATIC Services to start: $vcsaServicesStoppedLog"
+                if ($cisConnection) { $cisConnection | Disconnect-CisServer -Confirm:$false | Out-Null  2> $null }
                 Start-Sleep 30
             }
         }
         Catch {
-            Write-Output "Failed to connect to server $vcserver or a service as $vcuser"
-            Write-Output $Error[0].Exception
+            Write-Output "An issue occured while vCenter services are started ($vcserver as $vcuser): $($Error[0].Exception.Message)"
+            if ($cisConnection) { $cisConnection | Disconnect-CisServer -Confirm:$false | Out-Null  2> $null }
             Start-Sleep 20
         }
     } Until ($cisConnection.IsConnected -and !$vcsaServicesStopped)
 
-    $applianceService.list_details().Values | Format-Table -Property name_key, state, health | Write-Output
-    Write-Output "vAPI Service found: $((Get-CisService).Count)"
+    #$applianceService.list_details().Values | Format-Table -Property name_key, state, health | Write-Output
+    ($applianceService.list_details().GetEnumerator() | ForEach-Object { "$($_.Key) ($($_.Value.state)/$($_.Value.health))" } | Out-String).Trim().Replace("`r`n", ", ") | Write-Output
 
-    Write-Output "Connected to vCenter, all services are started"
+    Write-Output "Connection to vCenter OK, all AUTOMATIC services are started"
     $cisConnection | Disconnect-CisServer -Confirm:$false | Out-Null  2> $null
-
-    LabStartup-Sleep 10
 }
