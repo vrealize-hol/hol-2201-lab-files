@@ -1,10 +1,7 @@
 formatVersion: 1
-name: Base Linux Server
+name: Git-Trigger Linux Server
 version: 1
 inputs:
-  machineName:
-    title: Server Name
-    type: string
   flavor:
     title: Server size
     type: string
@@ -24,12 +21,7 @@ inputs:
 resources:
   linux:
     type: Cloud.vSphere.Machine
-    metadata:
-      layoutPosition:
-        - 0
-        - 0
     properties:
-      machineName: '${input.machineName}'
       image: '${input.image}'
       flavor: '${input.flavor}'
       folderName: 'Workloads/${env.projectName}'
@@ -51,12 +43,9 @@ resources:
           - sudo systemctl stop nginx
           - sudo systemctl disable nginx
           - sudo sed -e "s/Require local/#Require local/g" -i /etc/apache2/mods-enabled/status.conf
+          - sudo systemctl restart apache2
   network:
     type: Cloud.vSphere.Network
-    metadata:
-      layoutPosition:
-        - 1
-        - 0
     properties:
       networkType: existing
       constraints:
