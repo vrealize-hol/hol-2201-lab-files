@@ -20,7 +20,7 @@ function dumpProperties(props,lvl){
 dumpProperties(inputProperties, 0)
 
 var customProps = inputProperties.get("customProperties");
-var resourceNames = inputProperties.get("resourceNames");
+var vmNames = inputProperties.get("resourceNames");
 
 
 
