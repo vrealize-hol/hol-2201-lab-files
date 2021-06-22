@@ -1,0 +1,131 @@
+layout:
+  pages:
+    - id: page_general
+      sections:
+        - id: section_project
+          fields:
+            - id: project
+              display: dropDown
+              signpostPosition: right-middle
+        - id: section_ec7d44c4
+          fields:
+            - id: template_DeploymentName
+              display: textField
+              state:
+                visible: true
+                read-only: false
+              signpostPosition: right-middle
+        - id: section_deploymentName
+          fields:
+            - id: deploymentName
+              display: textField
+              state:
+                visible: false
+                read-only: true
+              signpostPosition: right-middle
+        - id: section_c3de3258
+          fields:
+            - id: image
+              display: dropDown
+              state:
+                visible: true
+                read-only: false
+              signpostPosition: right-middle
+        - id: section_flavor
+          fields:
+            - id: flavor
+              display: dropDown
+              state:
+                visible: true
+                read-only: false
+              signpostPosition: right-middle
+        - id: section_950f2ff3
+          fields:
+            - id: machineName
+              display: textField
+              state:
+                visible: true
+                read-only: false
+              signpostPosition: right-middle
+        - id: section_projectCode
+          fields:
+            - id: projectCode
+              display: dropDown
+              state:
+                visible: true
+                read-only: false
+              signpostPosition: right-middle
+      title: General
+      state: {}
+schema:
+  project:
+    label: Project
+    type:
+      dataType: string
+      isMultiple: false
+    valueList:
+      id: projects
+      type: scriptAction
+    constraints:
+      required: true
+  template_DeploymentName:
+    label: Deployment Name
+    type:
+      dataType: string
+      isMultiple: false
+    default: ''
+  deploymentName:
+    label: Deployment Name
+    type:
+      dataType: string
+      isMultiple: false
+    default:
+      bind:
+        values:
+          - template_DeploymentName
+          - '`_REQUEST`'
+        operator: concatenate
+    constraints:
+      required: true
+      max-value: 80
+  image:
+    label: Operating System
+    type:
+      dataType: string
+      isMultiple: false
+    default: ''
+    valueList:
+      - label: Ubuntu20
+        value: Ubuntu20
+      - label: Ubuntu18
+        value: Ubuntu18
+  flavor:
+    label: Server Size
+    type:
+      dataType: string
+      isMultiple: false
+    default: ''
+    valueList:
+      - label: small
+        value: small
+      - label: medium
+        value: medium
+      - label: large
+        value: large
+  machineName:
+    label: Server Name
+    type:
+      dataType: string
+      isMultiple: false
+    default: ''
+  projectCode:
+    label: Project Code
+    type:
+      dataType: string
+      isMultiple: false
+    valueList:
+      id: com.vmware.hol.2201.08/getProjectCodes
+      type: scriptAction
+      parameters: []
+options:
+  externalValidations: []
