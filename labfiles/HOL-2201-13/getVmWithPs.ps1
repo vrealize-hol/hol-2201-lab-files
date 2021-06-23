@@ -1,6 +1,6 @@
 # Connect to vCenter
-Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Confirm:$false
-Connect-VIserver "vcsa-01a.corp.local" -username "administrator@regiona.local" -password "VMware1!" -ErrorAction Stop
+Set-PowerCLIConfiguration -InvalidCertificateAction Ignore -Confirm:$false | Out-Null  2> $null
+Connect-VIserver "vcsa-01a.corp.local" -username "administrator@vsphere.local" -password "VMware1!" -ErrorAction Stop | Out-Null 2> $null
 
 # Search for the VM by name
 $vmPartialName = $inputs.vmName
