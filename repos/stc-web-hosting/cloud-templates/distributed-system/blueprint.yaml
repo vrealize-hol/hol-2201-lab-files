@@ -1,0 +1,114 @@
+name: Distributed System
+version: 1
+
+formatVersion: 1
+inputs:
+  size:
+    type: string
+    enum:
+      - small
+      - medium
+      - large
+    description: Size of Nodes
+    title: Tier Machine Size
+resources:
+  Cloud_LoadBalancer_1:
+    type: Cloud.NSX.LoadBalancer
+    properties:
+      name: OC-LB
+      routes:
+        - protocol: HTTP
+          port: "80"
+          instanceProtocol: HTTP
+          instancePort: "80"
+      network: "${resource.Cloud_Network_2.name}"
+      instances: "${resource.frontend[*].id}"
+      internetFacing: false
+  frontend:
+    type: Cloud.vSphere.Machine
+    dependsOn:
+      - mysql
+    properties:
+      image: Ubuntu18
+      flavor: medium
+      cloudConfig: |
+        repo_update: true
+        repo_upgrade: all
+        apt_source:
+          - source: deb http://archive.ubuntu.com/ubuntu main universe multiverse restricted
+        packages:
+          - apache2
+          - php
+          - php-mysql
+          - libapache2-mod-php
+          - php-mcrypt
+          - php-gd
+          - php-mbstring
+          - php-xml
+          - php-zip
+          - php-curl
+          - mysql-server-5.7
+          - unzip
+        runcmd:
+          - sudo service nginx stop
+          - systemctl restart apache2
+          - sed -i "s/PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          - service ssh reload         
+          - echo 'Cloud-init is done!' >> /tmp/finished.txt
+      constraints:
+        - tag: "compute:vsphere"
+      networks:
+        - name: "${resource.Cloud_Network_2.name}"
+          network: "${resource.Cloud_Network_2.id}"
+          assignment: static
+      count: '${input.size == "small" ? 1 :  (input.size == "medium" ? 2:3  )}'
+  mysql:
+    type: Cloud.vSphere.Machine
+    properties:
+      image: Ubuntu18
+      flavor: medium
+      cloudConfig: |
+        repo_update: true
+        repo_upgrade: all
+        apt_source:
+          - source: deb http://archive.ubuntu.com/ubuntu main universe multiverse restricted
+        packages:
+          - mysql-server-5.7
+          - mysql-client
+          - unzip
+        runcmd:
+          - export DEBIAN_FRONTEND=noninteractive
+          - USER=ocuser
+          - PASS=VMware1!
+          - echo $USER:$PASS | /usr/sbin/chpasswd
+          - echo admin:$PASS | /usr/sbin/chpasswd
+          - sed -i "s/PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          - service ssh reload
+          - echo "mysql-server-5.7 mysql-server/root_password password root" | sudo debconf-set-selections
+          - echo "mysql-server-5.7 mysql-server/root_password_again password root" | sudo debconf-set-selections
+          - echo "[client]" >> /etc/mysql/mysql.conf.d/mysqld.cnf
+          - echo "user=root" >> /etc/mysql/mysql.conf.d/mysqld.cnf
+          - echo "password=root" >> /etc/mysql/mysql.conf.d/mysqld.cnf
+          - echo "user=ocuser" >> /etc/mysql/mysql.conf.d/mysqld.cnf
+          - echo "password=$PASS" >> /etc/mysql/mysql.conf.d/mysqld.cnf         
+          - sed -i 's/bind-address/#bind-address/g' /etc/mysql/mysql.conf.d/mysqld.cnf
+          - systemctl restart mysql
+          - mysql -u root -e "GRANT ALL ON *.* TO '$USER'@'%' IDENTIFIED BY '$PASS'"
+          - mysql -u root -e 'CREATE DATABASE opencart'
+          - mysql -u root -e 'USE opencart'
+          - mysql -u root -e 'flush privileges'
+          - echo 'Cloud-init is done!' >> /tmp/finished.txt
+      constraints:
+        - tag: "compute:vsphere"
+      networks:
+        - name: "${resource.Cloud_Network_2.name}"
+          network: "${resource.Cloud_Network_2.id}"
+          assignment: static
+  Cloud_Network_2:
+    type: Cloud.NSX.Network
+    properties:
+      name: oc_network2
+      networkType: routed
+      constraints:
+        - tag: "net:nsxt"
+        - tag: "env:dev"
