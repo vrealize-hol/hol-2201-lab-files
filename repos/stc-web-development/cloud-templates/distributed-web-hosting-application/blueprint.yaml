@@ -1,4 +1,6 @@
 formatVersion: 1
+name: Distributed Web Hosting Application
+version: 1
 inputs:
   user:
     type: string
