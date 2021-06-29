@@ -15,20 +15,6 @@ import requests
 import json
 urllib3.disable_warnings()
 
-####### I M P O R T A N T #######
-# If you are deploying this vPod dircetly in OneCloud and not through the Hands On Lab portal,
-# you must uncomment the following lines and supply your own set of AWS and Azure keys
-#################################
-# awsid = "put your AWS access key here"
-# awssec = "put your AWS secret hey here"
-# azsub = "put your azure subscription id here"
-# azten = "put your azure tenant id here"
-# azappid = "put your azure application id here"
-# azappkey = "put your azure application key here"
-
-# also change the "local_creds" value below to True
-local_creds = False
-
 debug = True
 
 github_key = os.getenv('github_key')
@@ -36,7 +22,6 @@ slack_api_key = 'T024JFTN4/B0150SYEHFE/zNcnyZqWvUcEtaqyiRlLj86O'
 
 vra_fqdn = "vr-automation.corp.local"
 api_url_base = "https://" + vra_fqdn + "/"
-apiVersion = "2019-01-15"
 
 gitlab_api_url_base = "http://gitlab.corp.local/api/v4/"
 gitlab_token_suffix = "?private_token=H-WqAJP6whn6KCP2zGSz"
@@ -1479,64 +1464,14 @@ if is_configured():
     sys.stdout.write('vRA is already configured')
     sys.exit(1)
 
-# check to see if this vPod was deployed by VLP (is it an active Hands on Lab?)
-result = get_vlp_urn()
-log('VLP URN = ' + result)
-hol = True  # assume it is - the next step will change it if not
-if 'No urn' in result:
-    # this pod was not deployed by VLP = keys must be defined at top of this file
-    hol = False
-    log('\n\nThis pod was not deployed as a Hands On Lab')
-    try:
-        # test to see if public cloud keys are included at start of script
-        msg = awsid
-    except:
-        log('\n\n* * * *   I M P O R T A N T   * * * * *\n')
-        log('You must provide AWS and Azure key sets at the top of the "C:\\hol-2121-lab-files\\automation\\2121-base-config.py" script')
-        log('Uncomment the keys, replace with your own and run the configuration script again')
-        sys.exit()
-else:
-    vlp = result
 
-# if this pod is running as a Hands On Lab
-if hol:
-    log('Pod is running in VLP')
+# build and send Slack notification
+info = ""
+info += (f'*Credential set {cred_set} was assigned to the {vlp} VLP urn* \n')
+info += (f'- There are {available_count} sets remaining out of {unreserved_count} available \n')
+payload = {"text": info}
+send_slack_notification(payload)
 
-    # find out if this pod already has credentials assigned
-    credentials_used = check_for_assigned(vlp)
-    if credentials_used:
-        log('\n\n\nThis Hands On Lab pod already has credentials assigned')
-        log('You do not need to run this script again')
-        sys.exit()
-
-    assigned_pod = get_available_pod()  # find an available credential set
-    cred_set = assigned_pod[0]
-    unreserved_count = assigned_pod[1]
-    available_count = assigned_pod[2]
-    keys = get_creds(cred_set, vlp)
-    log(f'cred set: {cred_set}')
-    awsid = keys['aws_access_key']
-    awssec = keys['aws_secret_key']
-    azsub = keys['azure_subscription_id']
-    azten = keys['azure_tenant_id']
-    azappkey = keys['azure_application_key']
-    azappid = keys['azure_application_id']
-
-    if available_count > 0:
-        available_count = available_count-1
-
-    # build and send Slack notification
-    info = ""
-    info += (f'*Credential set {cred_set} was assigned to the {vlp} VLP urn* \n')
-    info += (f'- There are {available_count} sets remaining out of {unreserved_count} available \n')
-    payload = {"text": info}
-    send_slack_notification(payload)
-
-log('\nPublic cloud credentials found. Configuring vRealize Automation\n')
-
-log('Creating cloud accounts')
-create_aws_ca()
-create_azure_ca()
 
 log('Tagging cloud zones')
 c_zones_ids = get_czids()
@@ -1619,7 +1554,7 @@ enable_pipelines(pipeIds)
 ##########################################
 # API calls below as holuser
 ##########################################
-access_key = get_token("holuser", "VMware1!")
+access_key = get_token("holuser@corp.local", "VMware1!")
 headers1 = {'Content-Type': 'application/json',
             'Authorization': 'Bearer {0}'.format(access_key)}
 
