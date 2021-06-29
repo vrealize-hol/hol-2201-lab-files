@@ -198,10 +198,23 @@ def get_token(user_name, pass_word):
                              data=json.dumps(data), verify=False)
     if response.status_code == 200:
         json_data = response.json()
-        key = json_data['access_token']
-        return key
+        refreshToken = json_data['refresh_token']
     else:
         return('not ready')
+
+    api_url = '{0}iaas/api/login'.format(api_url_base)
+    data = {
+        "refreshToken": refreshToken
+    }
+    response = requests.post(api_url, headers=headers,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 200:
+        json_data = response.json()
+        bearerToken = json_data['token']
+        return(bearerToken)
+    else:
+        return('not ready')
+
 
 
 def get_vsphere_regions():
@@ -1439,41 +1452,25 @@ def update_git_proj(projId):
 
 headers = {'Content-Type': 'application/json'}
 
-if local_creds != True:
-    log('Getting ddb creds from router')
-    try:
-        keyfile = subprocess.check_output('plink -ssh router -l holuser -pw VMware1! cat mainconsole/ddb.json')
-    except:
-        log('Unable to get ddb creds from router')
-        log('... exiting')
-        vlpurn = get_vlp_urn()
-        payload = {"text": f"*WARNING - Could not get ddb creds for the pod with VLP URN: {vlpurn}*"}
-        send_slack_notification(payload)
-        sys.exit()
-    log('Got ddb creds from router')
-    json_data = json.loads(keyfile)
-    d_id = json_data['d_id']
-    d_sec = json_data['d_sec']
-    d_reg = json_data['d_reg']
-    subprocess.call('plink -ssh router -l holuser -pw VMware1! rm mainconsole/ddb.json')
-    log('Removed ddb creds from router')
-
 ###########################################
 # API calls below as holadmin
 ###########################################
-access_key = get_token("holadmin", "VMware1!")
+access_key = get_token("holadmin@corp.local", "VMware1!")
 
 # find out if vRA is ready. if not ready we need to exit or the configuration will fail
 if access_key == 'not ready':  # we are not even getting an auth token from vRA yet
     log('\n\n\nvRA is not yet ready in this Hands On Lab pod - no access token yet')
     log('Wait for the lab status to be *Ready* and then run this script again')
-    sys.stdout.write('vRA did not return an access key')
+    sys.stdout.write('vRA did not return a token')
     sys.exit(1)
 
 headers1 = {'Content-Type': 'application/json',
             'Authorization': 'Bearer {0}'.format(access_key)}
 headers2 = {'Content-Type': 'application/x-yaml',
             'Authorization': 'Bearer {0}'.format(access_key)}
+
+### GP Pause Here
+input("Press enter to continue...")
 
 # check to see if vRA is already configured and exit if it is
 if is_configured():
