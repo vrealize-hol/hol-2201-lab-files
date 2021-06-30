@@ -15,20 +15,6 @@ import requests
 import json
 urllib3.disable_warnings()
 
-####### I M P O R T A N T #######
-# If you are deploying this vPod dircetly in OneCloud and not through the Hands On Lab portal,
-# you must uncomment the following lines and supply your own set of AWS and Azure keys
-#################################
-# awsid = "put your AWS access key here"
-# awssec = "put your AWS secret hey here"
-# azsub = "put your azure subscription id here"
-# azten = "put your azure tenant id here"
-# azappid = "put your azure application id here"
-# azappkey = "put your azure application key here"
-
-# also change the "local_creds" value below to True
-local_creds = False
-
 debug = True
 
 github_key = os.getenv('github_key')
@@ -36,7 +22,6 @@ slack_api_key = 'T024JFTN4/B0150SYEHFE/zNcnyZqWvUcEtaqyiRlLj86O'
 
 vra_fqdn = "vr-automation.corp.local"
 api_url_base = "https://" + vra_fqdn + "/"
-apiVersion = "2019-01-15"
 
 gitlab_api_url_base = "http://gitlab.corp.local/api/v4/"
 gitlab_token_suffix = "?private_token=H-WqAJP6whn6KCP2zGSz"
@@ -198,10 +183,23 @@ def get_token(user_name, pass_word):
                              data=json.dumps(data), verify=False)
     if response.status_code == 200:
         json_data = response.json()
-        key = json_data['access_token']
-        return key
+        refreshToken = json_data['refresh_token']
     else:
         return('not ready')
+
+    api_url = '{0}iaas/api/login'.format(api_url_base)
+    data = {
+        "refreshToken": refreshToken
+    }
+    response = requests.post(api_url, headers=headers,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 200:
+        json_data = response.json()
+        bearerToken = json_data['token']
+        return(bearerToken)
+    else:
+        return('not ready')
+
 
 
 def get_vsphere_regions():
@@ -1439,41 +1437,25 @@ def update_git_proj(projId):
 
 headers = {'Content-Type': 'application/json'}
 
-if local_creds != True:
-    log('Getting ddb creds from router')
-    try:
-        keyfile = subprocess.check_output('plink -ssh router -l holuser -pw VMware1! cat mainconsole/ddb.json')
-    except:
-        log('Unable to get ddb creds from router')
-        log('... exiting')
-        vlpurn = get_vlp_urn()
-        payload = {"text": f"*WARNING - Could not get ddb creds for the pod with VLP URN: {vlpurn}*"}
-        send_slack_notification(payload)
-        sys.exit()
-    log('Got ddb creds from router')
-    json_data = json.loads(keyfile)
-    d_id = json_data['d_id']
-    d_sec = json_data['d_sec']
-    d_reg = json_data['d_reg']
-    subprocess.call('plink -ssh router -l holuser -pw VMware1! rm mainconsole/ddb.json')
-    log('Removed ddb creds from router')
-
 ###########################################
 # API calls below as holadmin
 ###########################################
-access_key = get_token("holadmin", "VMware1!")
+access_key = get_token("holadmin@corp.local", "VMware1!")
 
 # find out if vRA is ready. if not ready we need to exit or the configuration will fail
 if access_key == 'not ready':  # we are not even getting an auth token from vRA yet
     log('\n\n\nvRA is not yet ready in this Hands On Lab pod - no access token yet')
     log('Wait for the lab status to be *Ready* and then run this script again')
-    sys.stdout.write('vRA did not return an access key')
+    sys.stdout.write('vRA did not return a token')
     sys.exit(1)
 
 headers1 = {'Content-Type': 'application/json',
             'Authorization': 'Bearer {0}'.format(access_key)}
 headers2 = {'Content-Type': 'application/x-yaml',
             'Authorization': 'Bearer {0}'.format(access_key)}
+
+### GP Pause Here
+input("Press enter to continue...")
 
 # check to see if vRA is already configured and exit if it is
 if is_configured():
@@ -1482,64 +1464,14 @@ if is_configured():
     sys.stdout.write('vRA is already configured')
     sys.exit(1)
 
-# check to see if this vPod was deployed by VLP (is it an active Hands on Lab?)
-result = get_vlp_urn()
-log('VLP URN = ' + result)
-hol = True  # assume it is - the next step will change it if not
-if 'No urn' in result:
-    # this pod was not deployed by VLP = keys must be defined at top of this file
-    hol = False
-    log('\n\nThis pod was not deployed as a Hands On Lab')
-    try:
-        # test to see if public cloud keys are included at start of script
-        msg = awsid
-    except:
-        log('\n\n* * * *   I M P O R T A N T   * * * * *\n')
-        log('You must provide AWS and Azure key sets at the top of the "C:\\hol-2121-lab-files\\automation\\2121-base-config.py" script')
-        log('Uncomment the keys, replace with your own and run the configuration script again')
-        sys.exit()
-else:
-    vlp = result
 
-# if this pod is running as a Hands On Lab
-if hol:
-    log('Pod is running in VLP')
+# build and send Slack notification
+info = ""
+info += (f'*Credential set {cred_set} was assigned to the {vlp} VLP urn* \n')
+info += (f'- There are {available_count} sets remaining out of {unreserved_count} available \n')
+payload = {"text": info}
+send_slack_notification(payload)
 
-    # find out if this pod already has credentials assigned
-    credentials_used = check_for_assigned(vlp)
-    if credentials_used:
-        log('\n\n\nThis Hands On Lab pod already has credentials assigned')
-        log('You do not need to run this script again')
-        sys.exit()
-
-    assigned_pod = get_available_pod()  # find an available credential set
-    cred_set = assigned_pod[0]
-    unreserved_count = assigned_pod[1]
-    available_count = assigned_pod[2]
-    keys = get_creds(cred_set, vlp)
-    log(f'cred set: {cred_set}')
-    awsid = keys['aws_access_key']
-    awssec = keys['aws_secret_key']
-    azsub = keys['azure_subscription_id']
-    azten = keys['azure_tenant_id']
-    azappkey = keys['azure_application_key']
-    azappid = keys['azure_application_id']
-
-    if available_count > 0:
-        available_count = available_count-1
-
-    # build and send Slack notification
-    info = ""
-    info += (f'*Credential set {cred_set} was assigned to the {vlp} VLP urn* \n')
-    info += (f'- There are {available_count} sets remaining out of {unreserved_count} available \n')
-    payload = {"text": info}
-    send_slack_notification(payload)
-
-log('\nPublic cloud credentials found. Configuring vRealize Automation\n')
-
-log('Creating cloud accounts')
-create_aws_ca()
-create_azure_ca()
 
 log('Tagging cloud zones')
 c_zones_ids = get_czids()
@@ -1622,7 +1554,7 @@ enable_pipelines(pipeIds)
 ##########################################
 # API calls below as holuser
 ##########################################
-access_key = get_token("holuser", "VMware1!")
+access_key = get_token("holuser@corp.local", "VMware1!")
 headers1 = {'Content-Type': 'application/json',
             'Authorization': 'Bearer {0}'.format(access_key)}
 
