@@ -15,4 +15,4 @@ Write-Output "$(Get-Date) Finished testing vRA"
 Start-Sleep -Seconds 30
 
 ## Fix blueprint for HOL-2201-08
-python (Join-Path $LabStartupBaseFolder "2201-08_vra-fix-blueprint.py")
+python (Join-Path $LabStartupHookFolder "2201-08_vra-fix-blueprint.py")
