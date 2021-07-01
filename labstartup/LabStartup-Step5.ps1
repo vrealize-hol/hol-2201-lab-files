@@ -93,3 +93,8 @@ Do {
 
 # Clean kubeconfig
 Remove-Item -Path $KUBECTL_CONFIG_FOLDER -Recurse -Force -Confirm:$false
+
+
+## Clear expired token for SaltStack
+Invoke-Plink -remoteHost saltstack.corp.local -login root -passwd VMware1! -command 'rm /var/cache/salt/master/auth_token.jwt'
+Invoke-Plink -remoteHost saltstack.corp.local -login root -passwd VMware1! -command 'systemctl restart salt-master.service'
