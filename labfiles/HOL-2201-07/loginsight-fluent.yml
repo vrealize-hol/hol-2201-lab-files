@@ -66,15 +66,13 @@ spec:
        effect: NoSchedule
      containers:
      - name: fluentd-li
-       image: projects.registry.vmware.com/vrealize_loginsight/fluentd:1.0
+       image: gitlab.hol:5050/hol/registry/fluentd:1.0
        command: ["fluentd", "-c", "/etc/fluentd/fluent.conf", "-p", "/fluentd/plugins"]
        env:
        - name: FLUENTD_ARGS
          value: --no-supervisor -q
        resources:
          limits:
-           memory: 512Mi
-         requests:
            memory: 512Mi
        volumeMounts:
        - name: varlog
