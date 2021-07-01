@@ -1,5 +1,5 @@
 ###
-#Testing vRA
+# Testing vRA
 Write-VpodProgress "Checking vRA" 'GOOD-8'
 Write-Output "$(Get-Date) Testing vRA"
 Do {
@@ -12,5 +12,7 @@ Do {
 } Until ($vra_deploy -eq "Deployment complete" -and $vra_status -eq "Ready")
 Write-Output "$(Get-Date) Finished testing vRA"
 
+Start-Sleep -Seconds 30
 
-#Write-VpodProgress "vRA Initial Config" 'GOOD-8'
+## Fix blueprint for HOL-2201-08
+python (Join-Path $LabStartupBaseFolder "2201-08_vra-fix-blueprint.py")
