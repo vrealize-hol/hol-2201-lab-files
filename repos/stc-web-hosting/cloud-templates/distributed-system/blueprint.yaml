@@ -111,4 +111,4 @@ resources:
       networkType: routed
       constraints:
         - tag: "net:nsxt"
-        - tag: "env:dev"
+        - tag: "env:prod"
