@@ -1,6 +1,7 @@
 import sys
 import requests
 import json
+import time
 import urllib3
 urllib3.disable_warnings()
 
@@ -90,6 +91,21 @@ def refresh_catalog_source(name):
     return None
 
 
+def refresh_gitlab_all_repo():
+    # adds blueprints from 'projid' project as a content source
+    api_url = f"{api_url_base}content/api/sourcecontrol/sync-all-requests"
+    response = requests.post(api_url, data=json.dumps(
+        {}), headers=headers, verify=False)
+    if response.status_code == 202 and response.json()['content']:
+        time.sleep(15)
+        for sync_req in response.json()['content']:
+            response = requests.get(
+                f"{api_url_base}content/api/sourcecontrol/sync-requests/{sync_req['requestId']}", data=json.dumps({}), headers=headers, verify=False)
+            if response.status_code == 200 and response.json()['status']:
+                print(sync_req['requestId'], response.json()
+                      ['status'], response.json()['message'])
+
+
 ##### MAIN #####
 ###########################################
 # API calls below as holadmin
@@ -102,6 +118,7 @@ if access_key == 'not ready':  # we are not even getting an auth token from vRA 
     sys.exit()
 
 # Release the fixed blueprint version for HOL-2201-08
+refresh_gitlab_all_repo()
 hol_project_id = get_project_id("HOL Project")
 blueprint_id = get_blueprint_id('Distributed System')
 release_blueprint(blueprint_id, 2)
