@@ -408,7 +408,7 @@ def get_right_projid_rp(projid):
         return None
 
 
-def create_project(vsphere, aws, azure):
+def create_project_old(vsphere, aws, azure):
     api_url = '{0}iaas/api/projects'.format(api_url_base)
     data = {
         "name": "HOL Project",
@@ -1433,6 +1433,94 @@ def update_git_proj(projId):
         log('- Failed to update the gitlab project')
 
 
+#####################################################################
+
+def checkEnterpriseGroups(groupName):
+    api_url = '{0}csp/gateway/portal/api/orgs/7e3973a7-94dc-4953-8581-f1e912768f34/groups'.format(api_url_base)
+    response = requests.get(api_url, headers=headers1, verify=False)
+    if response.status_code == 200:
+        results = response.json()['results']
+        found = False
+        for result in results:
+            if result['displayName'] == groupName:
+                found = True
+        return(found)
+
+def getAvailableEnterpriseGroups(searchString):
+    api_url = '{0}csp/gateway/am/api/groups/search?searchTerm={1}'.format(api_url_base, searchString)
+    response = requests.get(api_url, headers=headers1, verify=False)
+    if response.status_code == 200:
+        content = response.json()
+        resultCount = content['totalResults']
+        if resultCount == 1:
+            groupId = content['results'][0]['id']
+    return(groupId)
+
+def setGroupRoles(group):
+    api_url = '{0}csp/gateway/portal/api/orgs/7e3973a7-94dc-4953-8581-f1e912768f34/groups'.format(api_url_base)
+    data = {
+        "ids":[group],
+        "organizationRoleNames":["org_member"],
+        "serviceRoles":[
+            {
+                "serviceDefinitionId":"7564d7c7-db7f-4738-8ec8-d6fa26a8d28c",
+                "serviceRoleNames":["catalog:user"]
+            },
+            {
+                "serviceDefinitionId":"f2bc3347-90dd-41b0-810f-22b78e59511b",
+                "serviceRoleNames":["CodeStream:viewer"]
+            }
+            ]
+        }
+    response = requests.post(api_url, headers=headers1, data=json.dumps(data), verify=False)
+    if response.status_code == 200:
+        content = response.json()
+        log('Added enterprise group roles')
+    else:
+        log('Did not set enterprise group roles')
+        quit()
+
+def createProject():
+    api_url = '{0}iaas/api/projects'.format(api_url_base)
+    data = {
+        "name": "Web Development",
+                "zoneAssignmentConfigurations": [
+                    {
+                        "zoneId": "0acaaec6-cf2d-4610-baaf-25890f06d3c9",
+                        "maxNumberInstances": 10,
+                        "priority": 0,
+                        "cpuLimit": 20,
+                        "memoryLimitMB": 10240,
+                        "storageLimitGB": 200
+                    }
+                ],
+        "administrators": [
+                    {
+                        "type": "user",
+                        "email": "devmgr@corp.local"
+                    }
+                ],
+        "members": [
+                    {
+                        "type": "group",
+                        "email": "web-dev-team@corp.local"
+                    }
+                ],
+        "machineNamingTemplate": "${resource.name}${####}",
+        "sharedResources": "false"
+    }
+    response = requests.post(api_url, headers=headers1,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 201:
+        json_data = response.json()
+        project_id = extract_values(json_data, 'id')
+        log('- Successfully created the Project')
+        return project_id[0]
+    else:
+        log('- Failed to create the Project')
+
+
+
 ##### MAIN #####
 
 headers = {'Content-Type': 'application/json'}
@@ -1454,8 +1542,24 @@ headers1 = {'Content-Type': 'application/json',
 headers2 = {'Content-Type': 'application/x-yaml',
             'Authorization': 'Bearer {0}'.format(access_key)}
 
+
+# Add AD group to vRA
+groupName = 'web-dev-team@corp.local'
+if checkEnterpriseGroups(groupName):
+    logMessage = groupName + ' group already exists in vRA'
+    log(logMessage)
+else:
+    log('Didn\'t find the {0} group in vRA. Adding it.'.format(groupName))
+    id = getAvailableEnterpriseGroups('web-dev')
+    setGroupRoles(id)
+
+# Add the project to Cloud Assembly
+projId = createProject()
+
+
 ### GP Pause Here
 input("Press enter to continue...")
+
 
 # check to see if vRA is already configured and exit if it is
 if is_configured():
