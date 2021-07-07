@@ -1520,6 +1520,136 @@ def createProject():
         log('Failed to create the Project. Exiting ...')
         quit()
 
+def configureGithub(projectId):
+    # adds GitHub blueprint integration with the Web Dev Project
+    api_url = '{0}content/api/sources'.format(api_url_base)
+    data = {
+        "typeId":"com.gitlab",
+        "config":{
+            "integrationId":"a8b6084f-81b1-4ad2-a5af-135e0428445c",
+            "repository":"hol/stc-web-development",
+            "path":"cloud-templates",
+            "branch":"main",
+            "contentType":"blueprint"
+        },
+        "projectId": projectId,
+        "name":"GitLab CS",
+        "syncEnabled": "true"
+        }
+    response = requests.post(api_url, headers=headers1,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 201:
+        log('Successfully added cloud template repo to project')
+    else:
+        log('Failed to add the cloud template repo to project. Exiting ...')
+        quit()
+
+def updateABX():
+    # updates the ABX action to apply to all projects
+    actionId = '8a74802079c6f2870179c75b69f00000'
+    initialProjectId = 'c5540053-d251-480d-8a5e-7d9579b45c05'
+    api_url = '{0}abx/api/resources/actions/{1}'.format(api_url_base, actionId)
+    data = {
+        "name":"Rename Cloud Machine",
+        "metadata":{
+            
+        },
+        "runtime":"python",
+        "source":"def handler(context, inputs):\r\n    \"\"\"Set a name for a machine\r\n\r\n    :param inputs\r\n    :param inputs.resourceNames: Contains the original name of the machine.\r\n           It is supplied from the event data during actual provisioning\r\n           or from user input for testing purposes.\r\n    :param inputs.newName: The new machine name to be set.\r\n    :return The desired machine name.\r\n    \"\"\"\r\n    old_name = inputs[\"resourceNames\"][0]\r\n    new_name = inputs[\"customProperties\"][\"machineName\"]\r\n\r\n    outputs = {}\r\n    outputs[\"resourceNames\"] = inputs[\"resourceNames\"]\r\n    outputs[\"resourceNames\"][0] = new_name\r\n\r\n    print(\"Setting machine name from {0} to {1}\".format(old_name, new_name))\r\n\r\n    return outputs\r\n",
+        "entrypoint":"handler",
+        "inputs":{
+            
+        },
+        "cpuShares":1024,
+        "memoryInMB":300,
+        "timeoutSeconds":600,
+        "deploymentTimeoutSeconds":900,
+        "actionType":"SCRIPT",
+        "provider":"on-prem",
+        "configuration":{
+            "const_azure-system_managed_identity":"false"
+        },
+        "system":"false",
+        "shared":"true",
+        "asyncDeployed":"false",
+        "projectId":"c5540053-d251-480d-8a5e-7d9579b45c05",
+        "orgId":"7e3973a7-94dc-4953-8581-f1e912768f34",
+        "id":"8a74802079c6f2870179c75b69f00000",
+        "selfLink":"/abx/api/resources/actions/8a74802079c6f2870179c75b69f00000?projectId=c5540053-d251-480d-8a5e-7d9579b45c05",
+        "scriptSource":0
+        }
+    response = requests.put(api_url, headers=headers1,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 200:
+        log('Successfully set extensibilty action to shared')
+    else:
+        log('Failed to set extensibility action to shared. Exiting ...')
+        quit()
+
+def updateSubscription():
+    # Updates the event broker subscription to include the web dev project
+    api_url = '{0}event-broker/api/subscriptions'.format(api_url_base)
+    data = {
+        "id":"sub_1622814224983",
+        "type":"RUNNABLE",
+        "name":"Rename Cloud Machine",
+        "description":"",
+        "disabled":"false",
+        "eventTopicId":"compute.allocation.pre",
+        "subscriberId":"abx-jbNQ6gIBff5ojEBi",
+        "blocking":"true",
+        "contextual":"false",
+        "criteria":"event.data.customProperties[\"machineName\"] != undefined",
+        "runnableType":"extensibility.abx",
+        "runnableId":"8a74802079c6f2870179c75b69f00000",
+        "timeout":0,
+        "priority":10,
+        "recoverRunnableType":"null",
+        "recoverRunnableId":"null",
+        "constraints":{
+            "projectId":[
+                "c5540053-d251-480d-8a5e-7d9579b45c05",
+                "73ae3a17-8e42-47b4-9301-4f14b4995392"
+            ]
+        }
+        }
+    response = requests.post(api_url, headers=headers1,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 201:
+        log('Successfully added the web dev project to the Action subscription')
+    else:
+        log('Failed to add the web dev project to the Action subscription. Exiting ...')
+        quit()
+
+def getCloudTemplateId(projectID, ctName):
+    api_url = '{0}blueprint/api/blueprints'.format(api_url_base)
+    response = requests.get(api_url, headers=headers1, verify=False)
+    if response.status_code == 200:
+        json_data = response.json()
+        templates = json_data['content']
+        for template in templates:
+            if ctName in template['name']:  # Looking to match the cloud template name
+                if projectID in template['projectId']:
+                    ctId = template['id']
+                    log('Found the {0} cloud template'.format(ctName))
+                    return ctId
+    else:
+        log('Failed to find the cloud template named ' + ctName)
+        quit()
+
+
+def releaseCloudTemplate(bpid, ver):
+    api_url = '{0}blueprint/api/blueprints/{1}/versions/{2}/actions/release'.format(
+        api_url_base, bpid, ver)
+    data = {}
+    response = requests.post(api_url, headers=headers1,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 200:
+        log('Successfully released the cloud template to the catalog')
+    else:
+        log('Failed to release the cloud template to the catalog')
+        quit()
+
 
 
 ##### MAIN #####
@@ -1543,7 +1673,7 @@ headers1 = {'Content-Type': 'application/json',
 headers2 = {'Content-Type': 'application/x-yaml',
             'Authorization': 'Bearer {0}'.format(access_key)}
 
-
+"""
 # Add AD group to vRA
 groupName = 'web-dev-team@corp.local'
 if checkEnterpriseGroups(groupName):
@@ -1557,8 +1687,23 @@ else:
 # Add the project to Cloud Assembly
 projId = createProject()
 
+# Add the GitHub cloud template repo to the project
+configureGithub(projId)
 
-### GP Pause Here
+# Update the ABX action
+updateABX()
+
+# Update the subscription
+updateSubscription()
+"""
+
+# Find the cloud template Id and then release the template to the catalog
+projId = '73ae3a17-8e42-47b4-9301-4f14b4995392'
+templateId = getCloudTemplateId(projId, 'Base Linux Server')
+releaseCloudTemplate(templateId, 1)
+
+####
+#GP Pause Here
 input("Press enter to continue...")
 
 
