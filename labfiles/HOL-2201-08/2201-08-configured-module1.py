@@ -1634,9 +1634,8 @@ def getCloudTemplateId(projectID, ctName):
                     log('Found the {0} cloud template'.format(ctName))
                     return ctId
     else:
-        log('Failed to find the cloud template named ' + ctName)
+        log('Failed to find the cloud template named ' + ctName + '. Exiting ...')
         quit()
-
 
 def releaseCloudTemplate(bpid, ver):
     api_url = '{0}blueprint/api/blueprints/{1}/versions/{2}/actions/release'.format(
@@ -1647,8 +1646,100 @@ def releaseCloudTemplate(bpid, ver):
     if response.status_code == 200:
         log('Successfully released the cloud template to the catalog')
     else:
-        log('Failed to release the cloud template to the catalog')
+        log('Failed to release the cloud template to the catalog. Exiting ...')
         quit()
+
+def addContentSoure(projid):
+    # adds cloud templates from 'projid' project as a content source
+    api_url = '{0}catalog/api/admin/sources'.format(api_url_base)
+    data = {
+        "name": "Web Development Templates",
+        "typeId": "com.vmw.blueprint",
+        "description": "Released cloud templates in the Web Development project",
+        "config": {"sourceProjectId": projid},
+        "projectId": projid
+    }
+    response = requests.post(api_url, headers=headers1,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 201:
+        json_data = response.json()
+        sourceId = json_data["id"]
+        log('Successfully added Web Dev cloud templates as a catalog source')
+        return sourceId
+    else:
+        log('Failed to add Web Dev cloud templates as a catalog source. Exiting ...')
+        quit()
+
+
+def shareCTs(source, project):
+    # shares cloud templates content (source) from 'projid' project to the catalog
+    api_url = '{0}catalog/api/admin/entitlements'.format(api_url_base)
+    data = {
+        "definition": {"type": "CatalogSourceIdentifier", "id": source},
+        "projectId": project
+    }
+    response = requests.post(api_url, headers=headers1,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 201:
+        log('Successfully added cloud template catalog entitlement')
+    else:
+        log('Failed to add cloud template catalog entitlement. Exiting ...')
+        quit()
+
+def getContentId():
+    # returns the item ID of the Web Dev Base Linux cloud template content
+    api_url = '{0}catalog/api/admin/items'.format(api_url_base)
+    response = requests.get(api_url, headers=headers1, verify=False)
+    if response.status_code == 200:
+        json_data = response.json()
+        items = json_data['content']
+        for item in items:
+            if item['sourceName'] == 'Web Development Templates':
+                if item['name'] == 'Base Linux Server':
+                    Id = item['id']
+                    log('Got content item ID')
+                    return Id   
+    else:
+        log('Failed to get the ID of the content item. Exiting ...')
+        quit()
+
+
+def updateIcon(itemId):
+    # applies the custom icon to the catalog item
+    api_url = '{0}catalog/api/admin/items/{1}'.format(api_url_base, itemId)
+    data = {
+        "iconId":"85bf95a3-5a28-3de6-bcd6-26dc305184b8",
+        "bulkRequestLimit":1
+        }
+    response = requests.patch(api_url, headers=headers1,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 200:
+        log('Successfully updated the content item icon')
+    else:
+        log('Failed to update the content item icon. Exiting ...')
+        quit()
+
+
+def updateForm(itemId):
+    # adds the custom form for the catalog item
+    api_url = '{0}form-service/api/forms'.format(api_url_base)
+    data = {
+        "name":"Base Linux Server",
+        "form":"{\"layout\":{\"pages\":[{\"id\":\"page_general\",\"sections\":[{\"id\":\"section_project\",\"fields\":[{\"id\":\"project\",\"display\":\"dropDown\",\"signpostPosition\":\"right-middle\"}]},{\"id\":\"section_deploymentName\",\"fields\":[{\"id\":\"deploymentName\",\"display\":\"textField\",\"signpostPosition\":\"right-middle\",\"state\":{\"visible\":true,\"read-only\":false}}]},{\"id\":\"section_image\",\"fields\":[{\"id\":\"image\",\"display\":\"dropDown\",\"state\":{\"visible\":true,\"read-only\":false},\"signpostPosition\":\"right-middle\"}]},{\"id\":\"section_flavor\",\"fields\":[{\"id\":\"flavor\",\"display\":\"dropDown\",\"state\":{\"visible\":true,\"read-only\":false},\"signpostPosition\":\"right-middle\"}]},{\"id\":\"section_machineName\",\"fields\":[{\"id\":\"machineName\",\"display\":\"textField\",\"state\":{\"visible\":true,\"read-only\":false},\"signpostPosition\":\"right-middle\"}]},{\"id\":\"section_projectCode\",\"fields\":[{\"id\":\"projectCode\",\"display\":\"dropDown\",\"state\":{\"visible\":true,\"read-only\":false},\"signpostPosition\":\"right-middle\"}]}],\"title\":\"General\",\"state\":{}}]},\"schema\":{\"project\":{\"label\":\"Project\",\"type\":{\"dataType\":\"string\",\"isMultiple\":false},\"valueList\":{\"id\":\"projects\",\"type\":\"scriptAction\"},\"constraints\":{\"required\":true}},\"deploymentName\":{\"label\":\"Deployment Name\",\"type\":{\"dataType\":\"string\",\"isMultiple\":false},\"constraints\":{\"required\":true,\"max-value\":80}},\"image\":{\"label\":\"Operating System\",\"type\":{\"dataType\":\"string\",\"isMultiple\":false},\"valueList\":[{\"label\":\"Ubuntu20\",\"value\":\"Ubuntu20\"},{\"label\":\"Ubuntu18\",\"value\":\"Ubuntu18\"}],\"constraints\":{\"required\":true}},\"flavor\":{\"label\":\"Server size\",\"type\":{\"dataType\":\"string\",\"isMultiple\":false},\"valueList\":[{\"label\":\"small\",\"value\":\"small\"},{\"label\":\"medium\",\"value\":\"medium\"},{\"label\":\"large\",\"value\":\"large\"}],\"constraints\":{\"required\":true}},\"machineName\":{\"label\":\"Server Name\",\"type\":{\"dataType\":\"string\",\"isMultiple\":false},\"constraints\":{\"required\":true}},\"projectCode\":{\"label\":\"Project Code\",\"type\":{\"dataType\":\"string\",\"isMultiple\":false},\"valueList\":{\"id\":\"com.vmware.hol.2201.08/getProjectCodes\",\"type\":\"scriptAction\",\"parameters\":[]},\"constraints\":{\"required\":true}}},\"options\":{\"externalValidations\":[]}}",
+        "styles":"null",
+        "status":"on",
+        "type":"requestForm",
+        "sourceId":itemId,
+        "sourceType":"com.vmw.blueprint"
+        }
+    response = requests.post(api_url, headers=headers1,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 201:
+        log('Successfully updated the content item form')
+    else:
+        log('Failed to update the content item form. Exiting ...')
+        quit()
+
 
 
 
@@ -1695,12 +1786,21 @@ updateABX()
 
 # Update the subscription
 updateSubscription()
-"""
 
 # Find the cloud template Id and then release the template to the catalog
-projId = '73ae3a17-8e42-47b4-9301-4f14b4995392'
 templateId = getCloudTemplateId(projId, 'Base Linux Server')
 releaseCloudTemplate(templateId, 1)
+
+# Add web dev cloud templates as content source in Service Broker
+projId = '73ae3a17-8e42-47b4-9301-4f14b4995392'
+catSource = addContentSoure(projId)
+shareCTs(catSource, projId)
+
+"""
+# Get the id of the content item and update its icon and form
+contentId = getContentId()
+updateIcon(contentId)
+updateForm(contentId)
 
 ####
 #GP Pause Here
@@ -1723,83 +1823,6 @@ payload = {"text": info}
 send_slack_notification(payload)
 
 
-log('Tagging cloud zones')
-c_zones_ids = get_czids()
-aws_cz = tag_aws_cz(c_zones_ids)
-azure_cz = tag_azure_cz(c_zones_ids)
-vsphere_cz = tag_vsphere_cz(c_zones_ids)
-
-log('Tagging vSphere workload clusters')
-compute = get_computeids()
-tag_vsphere_clusters(compute)
-
-log('Creating projects')
-hol_project = create_project(vsphere_cz, aws_cz, azure_cz)
-create_labauto_project()
-create_sd_project()
-create_odyssey_project(vsphere_cz, aws_cz, azure_cz)
-
-log('Creating GitHub blueprint repo integration')
-gitId = add_github_integration()
-configure_github(hol_project, gitId)
-
-log('Waiting for git repo to sync')
-time.sleep(20)
-
-log('Update the vSphere networking')
-networks = get_fabric_network_ids()
-vm_net_id = update_networks(networks)
-create_ip_pool()
-vsphere_region_id = get_vsphere_region_id()
-create_net_profile()
-
-log('Create storage profiles')
-datastore = get_vsphere_datastore_id()
-create_storage_profile()
-
-log('Updating flavor profiles')
-create_azure_flavor()
-create_aws_flavor()
-
-log('Updating image profiles')
-create_azure_image()
-create_aws_image()
-
-log('Configuring pricing')
-pricing_card_id = get_pricing_card()
-modify_pricing_card(pricing_card_id)
-sync_price()
-
-log('Adding blueprints to the catalog')
-blueprint_id = get_blueprint_id('Ubuntu 18')
-release_blueprint(blueprint_id, 1)
-blueprint_id = get_blueprint_id('AWS Machine')
-release_blueprint(blueprint_id, 1)
-blueprint_id = get_blueprint_id('Azure Machine')
-release_blueprint(blueprint_id, 1)
-blueprint_id = get_blueprint_id('Count-vms')
-release_blueprint(blueprint_id, 1)
-bp_source = add_bp_cat_source(hol_project)
-share_bps(bp_source, hol_project)
-
-log('Adding Custom Resources and Actions')
-org = getOrg(headers1)
-endpoints = getEndpoints(headers1)
-addCustomResource(headers1, endpoints['vro'],
-                  'C:/hol-2121-lab-files/automation/resource-ad-user.json')
-addResourceAction(
-    headers1, endpoints['vro'], org, 'C:/hol-2121-lab-files/automation/resource-action-vmotion.json')
-
-log('Creating the approval policy')
-catalog_item = get_cat_id('Azure Machine')
-create_approval_policy(catalog_item, hol_project)
-
-log('Importing Code Stream pipelines')
-create_cs_endpoint()
-pipe_names = ['CS-Reset-Resources', 'CS-Base-Configuration', 'CS-Chat-App']
-import_pipelines(pipe_names)
-pipeIds = get_pipelines()
-enable_pipelines(pipeIds)
 
 ##########################################
 # API calls below as holuser
