@@ -1477,7 +1477,7 @@ def setGroupRoles(group):
         content = response.json()
         log('Added enterprise group roles')
     else:
-        log('Did not set enterprise group roles')
+        log('Was not able to set enterprise group roles. Exiting ...')
         quit()
 
 def createProject():
@@ -1514,10 +1514,11 @@ def createProject():
     if response.status_code == 201:
         json_data = response.json()
         project_id = extract_values(json_data, 'id')
-        log('- Successfully created the Project')
+        log('Successfully created the Project')
         return project_id[0]
     else:
-        log('- Failed to create the Project')
+        log('Failed to create the Project. Exiting ...')
+        quit()
 
 
 
@@ -1533,9 +1534,9 @@ access_key = get_token("holadmin@corp.local", "VMware1!")
 # find out if vRA is ready. if not ready we need to exit or the configuration will fail
 if access_key == 'not ready':  # we are not even getting an auth token from vRA yet
     log('\n\n\nvRA is not yet ready in this Hands On Lab pod - no access token yet')
-    log('Wait for the lab status to be *Ready* and then run this script again')
+    log('Wait for the lab status to be *Ready* and then run this script again. Exiting ...')
     sys.stdout.write('vRA did not return a token')
-    sys.exit(1)
+    quit()
 
 headers1 = {'Content-Type': 'application/json',
             'Authorization': 'Bearer {0}'.format(access_key)}
