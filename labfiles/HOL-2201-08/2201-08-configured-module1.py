@@ -1741,6 +1741,48 @@ def updateForm(itemId):
         quit()
 
 
+def getCatId(projId):
+    api_url = '{0}catalog/api/items'.format(api_url_base)
+    response = requests.get(api_url, headers=headers1, verify=False)
+    if response.status_code == 200:
+        json_data = response.json()
+        catItems = json_data["content"]
+        itemName = 'Base Linux Server'
+        for catItem in catItems:
+            if itemName in catItem["name"]:
+                projectIds = catItem['projectIds']
+                if projectIds[0] == projId:
+                    catalogId = catItem['id']
+                    log('Found the catalog item ID')
+                    return catalogId
+    else:
+        log('Failed to get the catalog item ID. Exiting ...')
+        quit()
+
+
+def deployCatItem(catId, project):
+    # shares blueprint content (source) from 'projid' project to the catalog
+    api_url = '{0}catalog/api/items/{1}/request'.format(api_url_base, catId)
+    data = {
+        "deploymentName":"STC Demo",
+        "reason":"null",
+        "projectId":project,
+        "bulkRequestCount":1,
+        "inputs":{
+            "image":"Ubuntu18",
+            "flavor":"small",
+            "machineName":"web01",
+            "projectCode":"A1234"
+        }
+    }
+    response = requests.post(api_url, headers=headers1,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 200:
+        log('Successfully deployed the catalog item')
+    else:
+        log('Failed to deploy the catalog item. Exiting ...')
+        quit()
+
 
 
 ##### MAIN #####
@@ -1796,11 +1838,17 @@ projId = '73ae3a17-8e42-47b4-9301-4f14b4995392'
 catSource = addContentSoure(projId)
 shareCTs(catSource, projId)
 
-"""
 # Get the id of the content item and update its icon and form
 contentId = getContentId()
 updateIcon(contentId)
 updateForm(contentId)
+
+# Deploy the catalog item
+projId = '73ae3a17-8e42-47b4-9301-4f14b4995392'
+catId = getCatId(projId)
+deployCatItem(catId, projId)
+"""
+
 
 ####
 #GP Pause Here
