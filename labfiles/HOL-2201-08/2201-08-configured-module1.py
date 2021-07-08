@@ -1865,6 +1865,22 @@ def createCustomGroup():
         quit()
 
 
+def assignGroupToPolicy(customGroupId):
+    # imports the web-dev AD group and assignes it to the created custom group
+    api_url = '{0}policies/apply'.format(api_url_base)
+    data = {
+        "id" : "5d5abee4-d57b-4844-b1ff-1c31da827a94",
+        "groups" : [ customGroupId ]
+    }
+    response = requests.post(api_url, headers=headers1,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 200:
+        log('Successfully added the custom group to the HOL policy')
+    else:
+        log('Failed to add the custom group to the HOL policy. Exiting ...')
+        quit()
+
+
 def importAdGroup(customGroupId):
     # imports the web-dev AD group and assignes it to the created custom group
     api_url = '{0}auth/usergroups'.format(api_url_base)
@@ -1989,11 +2005,11 @@ numResources = waitForVM('web01')
 
 
 # Create the custom group and assign it to the policy
-groupId = createCustomGroup()
-# need to add function to assign group to the policy
+CustomGroupId = createCustomGroup()
+assignGroupToPolicy(CustomGroupId)
 
-# Import the AD group
-importAdGroup(groupId)
+# Import the AD group and assign role and objects
+importAdGroup(CustomGroupId)
 
 
 
