@@ -1806,6 +1806,25 @@ def getVropsToken(user, passwd):
         quit()
 
 
+def waitForVM(vmName):
+    # check for the VM name in inventory and wait until it's found or the operation times out
+    api_url = '{0}resources?name={1}'.format(api_url_base, vmName)
+    attempts = 0
+    maxAttempts = 50    # multiply by 10 seconds to set maximum wait time to find the VM
+    while attempts < maxAttempts:
+        response = requests.get(api_url, headers=headers1, verify=False)
+        if response.status_code == 200:
+            json_data = response.json()
+            resources = json_data['resourceList']
+            if len(resources) > 0:
+                log('The ' + vmName + ' object was found. Proceeding with configuring vROps.')
+                return 1
+            else:
+                attempts += 1
+    log('Failed to find the ' + vmName + ' object in a timely manner. Exiting ...')
+    quit()
+
+
 def createCustomGroup():
     # shares blueprint content (source) from 'projid' project to the catalog
     api_url = '{0}resources/groups'.format(api_url_base)
@@ -1928,6 +1947,11 @@ access_key = getVropsToken('admin', 'VMware1!')
 
 headers1 = {'Content-Type': 'application/json', 'Accept': 'application/json',
             'Authorization': 'vRealizeOpsToken {0}'.format(access_key)}
+
+# Retry until 'web01' VM is in inventory - this is an indicator that the vRA deployment completed and vROps discovered the object
+log('Waiting for the deployment to complete and for vROps to discover the new VM')
+log('The wait time will be approximately xx minutes')
+numResources = waitForVM('web01')
 
 # Create the custom group and assign it to the policy
 groupId = createCustomGroup()
