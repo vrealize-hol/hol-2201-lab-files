@@ -1821,6 +1821,7 @@ def waitForVM(vmName):
                 return 1
             else:
                 attempts += 1
+                time.sleep(10)
     log('Failed to find the ' + vmName + ' object in a timely manner. Exiting ...')
     quit()
 
