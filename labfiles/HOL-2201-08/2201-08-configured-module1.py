@@ -185,8 +185,10 @@ def get_token(user_name, pass_word):
     if response.status_code == 200:
         json_data = response.json()
         refreshToken = json_data['refresh_token']
+        log('Successfully got API access token from vRA')
     else:
-        return('not ready')
+        log('Failed to get API access token from vRA. Exiting ...')
+        quit()
 
     api_url = '{0}iaas/api/login'.format(api_url_base)
     data = {
@@ -197,10 +199,11 @@ def get_token(user_name, pass_word):
     if response.status_code == 200:
         json_data = response.json()
         bearerToken = json_data['token']
+        log('Successfully got API bearer token from vRA')
         return(bearerToken)
     else:
-        return('not ready')
-
+        log('Failed to get API bearer token from vRA. Exiting ...')
+        quit()
 
 
 def get_vsphere_regions():
@@ -1587,7 +1590,7 @@ def updateABX():
         log('Failed to set extensibility action to shared. Exiting ...')
         quit()
 
-def updateSubscription():
+def updateSubscription(projectId):
     # Updates the event broker subscription to include the web dev project
     api_url = '{0}event-broker/api/subscriptions'.format(api_url_base)
     data = {
@@ -1610,7 +1613,7 @@ def updateSubscription():
         "constraints":{
             "projectId":[
                 "c5540053-d251-480d-8a5e-7d9579b45c05",
-                "73ae3a17-8e42-47b4-9301-4f14b4995392"
+                projectId
             ]
         }
         }
@@ -1855,42 +1858,79 @@ def createCustomGroup():
     if response.status_code == 201:
         json_data = response.json()
         grpId = json_data['id']
+        log('Successfully created the custom group')
         return grpId
-        log('Created the custom group')
     else:
         log('Failed to create the custom group. Exiting ...')
         quit()
 
 
+def importAdGroup(customGroupId):
+    # imports the web-dev AD group and assignes it to the created custom group
+    api_url = '{0}auth/usergroups'.format(api_url_base)
+    data = {
+        "authSourceId": "f04a3838-1491-497b-8382-a4d75e5b7096",
+        "name": "web-dev-team@corp.local",
+        "description": "Web Developers AD Group",
+        "displayName": "web-dev-team@corp.local",
+        "userIds": [],
+        "roleNames": [
+            "Cloud Project Users"
+        ],
+        "role-permissions": [
+        {
+            "roleName": "Cloud Project Users",
+            "traversal-spec-instances": [
+                {
+                "adapterKind": "?",
+                "resourceKind": "?",
+                "name": "Custom Groups",
+                "resourceSelection": [
+                {
+                    "type": "PROPAGATE",
+                    "resourceId": [
+                        customGroupId
+                    ]
+                }
+                ],
+                "selectAllResources": "false"
+            }
+            ],
+            "allowAllObjects": "false"
+        }
+        ]
+    }
+    response = requests.post(api_url, headers=headers1,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 201:
+        log('Successfully imported the web-dev AD group')
+    else:
+        log('Failed to import the web-dev AD group. Exiting ...')
+        quit()
+
 
 ##### MAIN SCRIPT #####
-
+"""
 ###########################################
 # CONFIGURE vRA
 ###########################################
+log('*** Configuring vRA')
+
 headers = {'Content-Type': 'application/json'}
 access_key = get_token("holadmin@corp.local", "VMware1!")
-
-# find out if vRA is ready. if not ready we need to exit or the configuration will fail
-if access_key == 'not ready':  # we are not even getting an auth token from vRA yet
-    log('\n\n\nvRA is not yet ready in this Hands On Lab pod - no access token yet')
-    log('Wait for the lab status to be *Ready* and then run this script again. Exiting ...')
-    sys.stdout.write('vRA did not return a token')
-    quit()
 
 headers1 = {'Content-Type': 'application/json',
             'Authorization': 'Bearer {0}'.format(access_key)}
 headers2 = {'Content-Type': 'application/x-yaml',
             'Authorization': 'Bearer {0}'.format(access_key)}
 
-"""
 # Add AD group to vRA
 groupName = 'web-dev-team@corp.local'
 if checkEnterpriseGroups(groupName):
     logMessage = groupName + ' group already exists in vRA'
     log(logMessage)
 else:
-    log('Didn\'t find the {0} group in vRA. Adding it.'.format(groupName))
+    log('Did not find the {0} group in vRA. Adding it.'.format(groupName))
     id = getAvailableEnterpriseGroups('web-dev')
     setGroupRoles(id)
 
@@ -1904,14 +1944,17 @@ configureGithub(projId)
 updateABX()
 
 # Update the subscription
-updateSubscription()
+updateSubscription(projId)
+
+# Pause to give time for cloud templates to sync from GitLab
+log('Pausing to give time for cloud templates to sync from GitLab')
+time.sleep(20)
 
 # Find the cloud template Id and then release the template to the catalog
 templateId = getCloudTemplateId(projId, 'Base Linux Server')
 releaseCloudTemplate(templateId, 1)
 
 # Add web dev cloud templates as content source in Service Broker
-projId = '73ae3a17-8e42-47b4-9301-4f14b4995392'
 catSource = addContentSoure(projId)
 shareCTs(catSource, projId)
 
@@ -1921,34 +1964,22 @@ updateIcon(contentId)
 updateForm(contentId)
 
 # Deploy the catalog item
-projId = '73ae3a17-8e42-47b4-9301-4f14b4995392'
 catId = getCatId(projId)
 deployCatItem(catId, projId)
-"""
-
-
 
 """
-# check to see if vRA is already configured and exit if it is
-if is_configured():
-    log('vRA is already configured')
-    log('... exiting')
-    sys.stdout.write('vRA is already configured')
-    sys.exit(1)
-"""
-
-
 ##########################################
 # CONFIGURE vROps
 ##########################################
 api_url_base = 'https://' + vrops_fqdn + '/suite-api/api/'
 headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
+log('*** Configuring vROps')
+
 access_key = getVropsToken('admin', 'VMware1!')
 
 headers1 = {'Content-Type': 'application/json', 'Accept': 'application/json',
             'Authorization': 'vRealizeOpsToken {0}'.format(access_key)}
-
 """
 # Retry until 'web01' VM is in inventory - this is an indicator that the vRA deployment completed and vROps discovered the object
 log('Waiting for the deployment to complete and for vROps to discover the new VM')
@@ -1956,8 +1987,13 @@ log('The wait time will be approximately xx minutes')
 numResources = waitForVM('web01')
 """
 
+
 # Create the custom group and assign it to the policy
 groupId = createCustomGroup()
+# need to add function to assign group to the policy
+
+# Import the AD group
+importAdGroup(groupId)
 
 
 
