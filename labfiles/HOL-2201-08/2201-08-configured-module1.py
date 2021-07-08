@@ -21,6 +21,7 @@ github_key = os.getenv('github_key')
 slack_api_key = 'T024JFTN4/B0150SYEHFE/zNcnyZqWvUcEtaqyiRlLj86O'
 
 vra_fqdn = "vr-automation.corp.local"
+vrops_fqdn = 'vr-operations.corp.local'
 api_url_base = "https://" + vra_fqdn + "/"
 
 gitlab_api_url_base = "http://gitlab.corp.local/api/v4/"
@@ -1783,15 +1784,71 @@ def deployCatItem(catId, project):
         log('Failed to deploy the catalog item. Exiting ...')
         quit()
 
+###################
+## vROps Functions
+###################
+
+def getVropsToken(user, passwd):
+    api_url = '{0}auth/token/acquire'.format(api_url_base)
+    data = {
+        "username": user,
+        "password": passwd
+    }
+    response = requests.post(api_url, headers=headers,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 200:
+        json_data = response.json()
+        refreshToken = json_data['token']
+        log('Retreived vROps API refresh token')
+        return refreshToken
+    else:
+        log('Failed to get vROps API refresh token. Exiting ...')
+        quit()
 
 
-##### MAIN #####
+def createCustomGroup():
+    # shares blueprint content (source) from 'projid' project to the catalog
+    api_url = '{0}resources/groups'.format(api_url_base)
+    data = {
+        "resourceKey" : {
+            "name" : "Web Development Workloads",
+            "adapterKindKey" : "Container",
+            "resourceKindKey" : "Cloud Project"
+        },
+        "autoResolveMembership" : "true",
+        "membershipDefinition" : {
+            "rules" : [ {
+            "resourceKindKey" : {
+                "resourceKind" : "VirtualMachine",
+                "adapterKind" : "VMWARE"
+            },
+            "propertyConditionRules" : [ {
+                "key" : "summary|tag",
+                "stringValue" : "Web Development",
+                "compareOperator" : "CONTAINS"
+            } ]
+            } ]
+        }
+    }
+    response = requests.post(api_url, headers=headers1,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 201:
+        json_data = response.json()
+        grpId = json_data['id']
+        return grpId
+        log('Created the custom group')
+    else:
+        log('Failed to create the custom group. Exiting ...')
+        quit()
 
+
+
+##### MAIN SCRIPT #####
+
+###########################################
+# CONFIGURE vRA
+###########################################
 headers = {'Content-Type': 'application/json'}
-
-###########################################
-# API calls below as holadmin
-###########################################
 access_key = get_token("holadmin@corp.local", "VMware1!")
 
 # find out if vRA is ready. if not ready we need to exit or the configuration will fail
@@ -1850,32 +1907,39 @@ deployCatItem(catId, projId)
 """
 
 
-####
-#GP Pause Here
-input("Press enter to continue...")
 
-
+"""
 # check to see if vRA is already configured and exit if it is
 if is_configured():
     log('vRA is already configured')
     log('... exiting')
     sys.stdout.write('vRA is already configured')
     sys.exit(1)
-
-
-# build and send Slack notification
-info = ""
-info += (f'*Credential set {cred_set} was assigned to the {vlp} VLP urn* \n')
-info += (f'- There are {available_count} sets remaining out of {unreserved_count} available \n')
-payload = {"text": info}
-send_slack_notification(payload)
-
+"""
 
 
 ##########################################
-# API calls below as holuser
+# CONFIGURE vROps
 ##########################################
-access_key = get_token("holuser@corp.local", "VMware1!")
+api_url_base = 'https://' + vrops_fqdn + '/suite-api/api/'
+headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+
+access_key = getVropsToken('admin', 'VMware1!')
+
+headers1 = {'Content-Type': 'application/json', 'Accept': 'application/json',
+            'Authorization': 'vRealizeOpsToken {0}'.format(access_key)}
+
+# Create the custom group and assign it to the policy
+groupId = createCustomGroup()
+
+
+
+####
+#GP Pause Here
+input("Press enter to continue...")
+
+
+
 headers1 = {'Content-Type': 'application/json',
             'Authorization': 'Bearer {0}'.format(access_key)}
 
