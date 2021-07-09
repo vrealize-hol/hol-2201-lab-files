@@ -1442,6 +1442,61 @@ def update_git_proj(projId):
 ## vRSLCM Functions
 ###################
 
+def checkForAdGroup():
+    log('Querying to see if the web-dev-team AD has already been added to vRSLCM')
+    api_url = '{0}idp/dirConfigs/searchgroups'.format(api_url_base)
+    data = {
+        "searchDns": [
+            "OU=Groups,OU=HOL,DC=corp,DC=local"
+        ],
+        "directoryConfigId": "70665188-ddb3-49f6-98f7-327e69572de5",
+        "vidmDomainName": "corp.local",
+        "baseTenantHostname": "rainpole-portal.corp.local",
+        "vidmAdminPassword": "locker:password:3c18cac5-fa10-4c96-916b-870d28019817:VMware1!",
+        "vidmHost": "rainpole-portal.corp.local",
+        "vidmAdminUser": "admin",
+        "vidmVersion": "3.3.5",
+        "vidmRootPassword": "locker:password:3c18cac5-fa10-4c96-916b-870d28019817:VMware1!",
+        "vidmSshPassword": "locker:password:3c18cac5-fa10-4c96-916b-870d28019817:VMware1!",
+        "vidmOAuthServiceClientId": "Service__OAuth2Client",
+        "vidmOAuthServiceClientSecret": "jurOkijbaxqlB5VpLtuEY920sYkHdMjX",
+        "tenancyEnabled": "true",
+        "vidmProductCertificate": "locker:certificate:d8845355-dd9a-42f4-9825-a597543e59b9:identity-manager",
+        "clusteredVidm": "false"
+    }
+    response = requests.post(api_url, headers=headers,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 200:
+        json_data = response.json()
+        requestId = json_data['vmid']
+        api_url = 'https://vr-lcm.corp.local/lcm/request/api/requests/{0}'.format(requestId)
+        queryComplete = False
+        while not queryComplete:
+            response = requests.get(api_url, headers=headers, verify=False)
+            if response.status_code == 200:
+                json_data = response.json()
+                queryState = json_data['state']
+                if queryState == 'COMPLETED':
+                    queryComplete = True
+                else:
+                    log('Waiting for query results')
+                    time.sleep(2)
+            else:
+                log('AD group query failed. Exiting ...')
+                quit()
+        queryResults = json_data['resultSet']
+        if 'web-dev-team' in queryResults:      # the group alerady exists in vRSLCM
+            log('\n\nThe web-dev-team AD group has already been added in vRSLCM')
+            log('This script cannot proceed. You must completed module 1 or end this lab')
+            log('   and start a new lab where you can bypass module 1 by running this script\n\n')
+            quit()
+        else:
+            log('The web-dev-team AD group is not yet added to vRSLCM. Proceeding with the configuration.')
+    else:
+        log('Failed to query whether AD group exists in vRSLCM. Exiting ...')
+        quit()
+
+
 def addAdGroup():
     api_url = '{0}idp/dirConfigs/syncprofile'.format(api_url_base)
     data = {
@@ -2070,7 +2125,22 @@ def importAdGroup(customGroupId):
 
 
 ##### MAIN SCRIPT #####
-"""
+
+##########################################
+# CONFIGURE vRSLCM
+##########################################
+log('*** Configuring vRSLCM')
+
+api_url_base = 'https://' + vrslcm_fqdn + '/lcm/authzn/api/'
+
+headers = {'Content-Type': 'application/json', 'Accept': 'application/json',
+            'Authorization': 'Basic YWRtaW5AbG9jYWw6Vk13YXJlMSE='}
+
+checkForAdGroup()
+addAdGroup()
+syncAdGroup()
+
+
 ###########################################
 # CONFIGURE vRA
 ###########################################
@@ -2146,19 +2216,5 @@ assignGroupToPolicy(CustomGroupId)
 # Import the AD group and assign role and objects
 importAdGroup(CustomGroupId)
 
-
-"""
-##########################################
-# CONFIGURE vRSLCM
-##########################################
-log('*** Configuring vRSLCM')
-
-api_url_base = 'https://' + vrslcm_fqdn + '/lcm/authzn/api/'
-headers = {'Content-Type': 'application/json', 'Accept': 'application/json',
-            'Authorization': 'Basic YWRtaW5AbG9jYWw6Vk13YXJlMSE='}
-#vrslcmLogin("admin@local", "VMware1!")
-
-#addAdGroup()
-syncAdGroup()
-
-
+log('\n\n\nConfiguration script completed')
+log('Follow instructions in the lab manual to complete the setup before proceeding.')
