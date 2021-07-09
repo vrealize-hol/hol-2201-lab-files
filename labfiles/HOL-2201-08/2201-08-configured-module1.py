@@ -1,15 +1,7 @@
 import urllib3
 import sys
-import re
 import subprocess
 from time import strftime, sleep
-import calendar
-import datetime
-from random import seed, randint
-from boto3.dynamodb.conditions import Key, Attr
-import boto3
-import traceback
-import os
 import time
 import requests
 import json
@@ -697,6 +689,7 @@ headers1 = {'Content-Type': 'application/json',
 groupName = 'web-dev-team@corp.local'
 if checkEnterpriseGroups(groupName):
     logMessage = groupName + ' group already exists in vRA'
+    log('\n')
     log(logMessage)
     log('This script cannot proceed. You must completed module 1 or end this lab')
     log('   and start a new lab where you can bypass module 1 by running this script\n\n')
