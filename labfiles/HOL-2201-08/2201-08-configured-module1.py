@@ -685,6 +685,8 @@ access_key = getVraToken("holadmin@corp.local", "VMware1!")
 headers1 = {'Content-Type': 'application/json',
             'Authorization': 'Bearer {0}'.format(access_key)}
 
+projId = 'ece13eca-e5fb-4386-b58d-c2a678fcac54'           
+
 # Add AD group to vRA
 groupName = 'web-dev-team@corp.local'
 if checkEnterpriseGroups(groupName):
@@ -696,8 +698,8 @@ if checkEnterpriseGroups(groupName):
     quit()
 else:
     log('Did not find the {0} group in vRA. Adding it.'.format(groupName))
-id = getAvailableEnterpriseGroups('web-dev')
-setGroupRoles(id)
+id = getAvailableEnterpriseGroups('web-dev-team@corp.local')
+setGroupRoles(id)`
 
 # Add the project to Cloud Assembly
 projId = createProject()
@@ -724,6 +726,7 @@ catSource = addContentSoure(projId)
 shareCTs(catSource, projId)
 
 # Get the id of the content item and update its icon and form
+time.sleep(5)
 contentId = getContentId()
 updateIcon(contentId)
 updateForm(contentId)
