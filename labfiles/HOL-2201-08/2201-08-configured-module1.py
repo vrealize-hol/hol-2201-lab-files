@@ -186,12 +186,18 @@ def checkEnterpriseGroups(groupName):
 
 def getAvailableEnterpriseGroups(searchString):
     api_url = '{0}csp/gateway/am/api/groups/search?searchTerm={1}'.format(api_url_base, searchString)
-    response = requests.get(api_url, headers=headers1, verify=False)
-    if response.status_code == 200:
-        content = response.json()
-        resultCount = content['totalResults']
-        if resultCount == 1:
-            groupId = content['results'][0]['id']
+    groupFound = False
+    while not groupFound:
+        response = requests.get(api_url, headers=headers1, verify=False)
+        if response.status_code == 200:
+            content = response.json()
+            resultCount = content['totalResults']
+            if resultCount == 1:
+                groupId = content['results'][0]['id']
+                groupFound = True
+            else:
+                log(' Waitng for AD group to be seen in vRA')
+                time.sleep(5)       # wait 5 seconds and try again
     return(groupId)
 
 def setGroupRoles(group):
@@ -697,8 +703,8 @@ if checkEnterpriseGroups(groupName):
     quit()
 else:
     log('Did not find the {0} group in vRA. Adding it.'.format(groupName))
-    id = getAvailableEnterpriseGroups('web-dev')
-    setGroupRoles(id)
+id = getAvailableEnterpriseGroups('web-dev')
+setGroupRoles(id)
 
 # Add the project to Cloud Assembly
 projId = createProject()
