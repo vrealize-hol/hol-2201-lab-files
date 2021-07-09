@@ -699,10 +699,11 @@ if checkEnterpriseGroups(groupName):
 else:
     log('Did not find the {0} group in vRA. Adding it.'.format(groupName))
 id = getAvailableEnterpriseGroups('web-dev-team@corp.local')
-setGroupRoles(id)`
+setGroupRoles(id)
 
 # Add the project to Cloud Assembly
 projId = createProject()
+time.sleep(5)
 
 # Add the GitHub cloud template repo to the project
 configureGithub(projId)
