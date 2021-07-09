@@ -20,9 +20,9 @@ debug = True
 github_key = os.getenv('github_key')
 slack_api_key = 'T024JFTN4/B0150SYEHFE/zNcnyZqWvUcEtaqyiRlLj86O'
 
-vra_fqdn = "vr-automation.corp.local"
+vra_fqdn = 'vr-automation.corp.local'
 vrops_fqdn = 'vr-operations.corp.local'
-api_url_base = "https://" + vra_fqdn + "/"
+vrslcm_fqdn = 'vr-lcm.corp.local'
 
 gitlab_api_url_base = "http://gitlab.corp.local/api/v4/"
 gitlab_token_suffix = "?private_token=H-WqAJP6whn6KCP2zGSz"
@@ -1437,7 +1437,151 @@ def update_git_proj(projId):
         log('- Failed to update the gitlab project')
 
 
-#####################################################################
+
+###################
+## vRSLCM Functions
+###################
+
+def addAdGroup():
+    api_url = '{0}idp/dirConfigs/syncprofile'.format(api_url_base)
+    data = {
+        "directoryConfigId":"70665188-ddb3-49f6-98f7-327e69572de5",
+        "syncProfileGroup": 
+        {
+            "excludeNestedGroupMembers":"false",
+            "identityGroupInfo":
+            {
+                "OU=Groups,OU=HOL,DC=corp,DC=local":
+                {
+                    "mappedGroupData":
+                    [
+                        {
+                            "mappedGroup":
+                            {
+                                "horizonName":"app-support-team@corp.local",
+                                "dn":"CN=app-support-team,OU=Groups,OU=HOL,DC=corp,DC=local",
+                                "objectGuid":"8d09eee9-4cd7-4d16-989b-d756000b7a22",
+                                "groupBaseDN":"OU=Groups,OU=HOL,DC=corp,DC=local",
+                                "source":"DIRECTORY"
+                            },
+                            "selected":"true"
+                        },
+                        {
+                            "mappedGroup":
+                            {
+                                "horizonName":"web-admin-team@corp.local",
+                                "dn":"CN=web-admin-team,OU=Groups,OU=HOL,DC=corp,DC=local",
+                                "objectGuid":"4365c789-2979-428b-a3d0-b7960d01d800",
+                                "groupBaseDN":"OU=Groups,OU=HOL,DC=corp,DC=local",
+                                "source":"DIRECTORY"
+                            },
+                            "selected":"true"
+                        },
+                        {
+                            "mappedGroup":
+                            {
+                                "horizonName":"web-dev-team@corp.local",
+                                "dn":"CN=web-dev-team,OU=Groups,OU=HOL,DC=corp,DC=local",
+                                "objectGuid":"9f9df8cb-9ed0-4cb6-a971-341331bdf8ef",
+                                "groupBaseDN":"OU=Groups,OU=HOL,DC=corp,DC=local",
+                                "source":"DIRECTORY"
+                            },
+                            "selected":"true"
+                        }
+                    ],
+                    "selected":"false",
+                    "numSelected":3,
+                    "numTotal":4
+                    }
+                }
+            },
+            "triggerDryrun":"false",
+            "vidmDomainName":"corp.local",
+            "baseTenantHostname":"rainpole-portal.corp.local",
+            "vidmAdminPassword":"locker:password:3c18cac5-fa10-4c96-916b-870d28019817:VMware1!",
+            "vidmHost":"rainpole-portal.corp.local",
+            "vidmAdminUser":"admin",
+            "vidmVersion":"3.3.5",
+            "vidmRootPassword":"locker:password:3c18cac5-fa10-4c96-916b-870d28019817:VMware1!",
+            "vidmSshPassword":"locker:password:3c18cac5-fa10-4c96-916b-870d28019817:VMware1!",
+            "vidmOAuthServiceClientId":"Service__OAuth2Client",
+            "vidmOAuthServiceClientSecret":"jurOkijbaxqlB5VpLtuEY920sYkHdMjX",
+            "tenancyEnabled":"true",
+            "vidmProductCertificate":"locker:certificate:d8845355-dd9a-42f4-9825-a597543e59b9:identity-manager",
+            "clusteredVidm":"false"
+        }
+    response = requests.post(api_url, headers=headers,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 200:
+        log('Successfully added AD group to vRSLCM')
+    else:
+        log('Failed to add AD group to vRSLCM. Exiting ...')
+        quit()
+
+
+def syncAdGroup():
+    api_url = '{0}idp/dirConfigs/syncprofile/sync'.format(api_url_base)
+    data = {
+        "directoryConfigId": "70665188-ddb3-49f6-98f7-327e69572de5",
+        "vidmDomainName": "corp.local",
+        "baseTenantHostname": "rainpole-portal.corp.local",
+        "vidmAdminPassword": "locker:password:3c18cac5-fa10-4c96-916b-870d28019817:VMware1!",
+        "vidmHost": "rainpole-portal.corp.local",
+        "vidmAdminUser": "admin",
+        "vidmVersion": "3.3.5",
+        "vidmRootPassword": "locker:password:3c18cac5-fa10-4c96-916b-870d28019817:VMware1!",
+        "vidmSshPassword": "locker:password:3c18cac5-fa10-4c96-916b-870d28019817:VMware1!",
+        "vidmOAuthServiceClientId": "Service__OAuth2Client",
+        "vidmOAuthServiceClientSecret": "jurOkijbaxqlB5VpLtuEY920sYkHdMjX",
+        "tenancyEnabled": "true",
+        "vidmProductCertificate": "locker:certificate:d8845355-dd9a-42f4-9825-a597543e59b9:identity-manager",
+        "clusteredVidm": "false"
+        }
+    response = requests.post(api_url, headers=headers,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 200:
+        log('Successfully synced AD group in vRSLCM')
+    else:
+        log('Failed to sync AD group in vRSLCM. Exiting ...')
+        quit()
+
+
+
+###################
+## vRA Functions
+###################
+
+def getVraToken(user_name, pass_word):
+    api_url = '{0}csp/gateway/am/api/login?access_token'.format(api_url_base)
+    data = {
+        "username": user_name,
+        "password": pass_word
+    }
+    response = requests.post(api_url, headers=headers,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 200:
+        json_data = response.json()
+        refreshToken = json_data['refresh_token']
+        log('Successfully got API access token from vRA')
+    else:
+        log('Failed to get API access token from vRA. Exiting ...')
+        quit()
+
+    api_url = '{0}iaas/api/login'.format(api_url_base)
+    data = {
+        "refreshToken": refreshToken
+    }
+    response = requests.post(api_url, headers=headers,
+                             data=json.dumps(data), verify=False)
+    if response.status_code == 200:
+        json_data = response.json()
+        bearerToken = json_data['token']
+        log('Successfully got API bearer token from vRA')
+        return(bearerToken)
+    else:
+        log('Failed to get API bearer token from vRA. Exiting ...')
+        quit()
+
 
 def checkEnterpriseGroups(groupName):
     api_url = '{0}csp/gateway/portal/api/orgs/7e3973a7-94dc-4953-8581-f1e912768f34/groups'.format(api_url_base)
@@ -1932,12 +2076,11 @@ def importAdGroup(customGroupId):
 ###########################################
 log('*** Configuring vRA')
 
+api_url_base = "https://" + vra_fqdn + "/"
 headers = {'Content-Type': 'application/json'}
-access_key = get_token("holadmin@corp.local", "VMware1!")
+access_key = getVraToken("holadmin@corp.local", "VMware1!")
 
 headers1 = {'Content-Type': 'application/json',
-            'Authorization': 'Bearer {0}'.format(access_key)}
-headers2 = {'Content-Type': 'application/x-yaml',
             'Authorization': 'Bearer {0}'.format(access_key)}
 
 # Add AD group to vRA
@@ -1983,26 +2126,18 @@ updateForm(contentId)
 catId = getCatId(projId)
 deployCatItem(catId, projId)
 
-"""
+
 ##########################################
 # CONFIGURE vROps
 ##########################################
-api_url_base = 'https://' + vrops_fqdn + '/suite-api/api/'
-headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
-
 log('*** Configuring vROps')
 
+api_url_base = 'https://' + vrops_fqdn + '/suite-api/api/'
+headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 access_key = getVropsToken('admin', 'VMware1!')
 
 headers1 = {'Content-Type': 'application/json', 'Accept': 'application/json',
             'Authorization': 'vRealizeOpsToken {0}'.format(access_key)}
-"""
-# Retry until 'web01' VM is in inventory - this is an indicator that the vRA deployment completed and vROps discovered the object
-log('Waiting for the deployment to complete and for vROps to discover the new VM')
-log('The wait time will be approximately xx minutes')
-numResources = waitForVM('web01')
-"""
-
 
 # Create the custom group and assign it to the policy
 CustomGroupId = createCustomGroup()
@@ -2012,24 +2147,18 @@ assignGroupToPolicy(CustomGroupId)
 importAdGroup(CustomGroupId)
 
 
-
-####
-#GP Pause Here
-input("Press enter to continue...")
-
-
-
-headers1 = {'Content-Type': 'application/json',
-            'Authorization': 'Bearer {0}'.format(access_key)}
-
-time.sleep(90)
-log('Deploying vSphere VM')
-catalog_item = get_cat_id('Ubuntu 18')
-deploy_cat_item(catalog_item, hol_project)
-
+"""
 ##########################################
-# Configure GitLab Project
+# CONFIGURE vRSLCM
 ##########################################
-log('Configuring GitLab')
-git_proj_id = get_gitlab_projects()
-update_git_proj(git_proj_id)
+log('*** Configuring vRSLCM')
+
+api_url_base = 'https://' + vrslcm_fqdn + '/lcm/authzn/api/'
+headers = {'Content-Type': 'application/json', 'Accept': 'application/json',
+            'Authorization': 'Basic YWRtaW5AbG9jYWw6Vk13YXJlMSE='}
+#vrslcmLogin("admin@local", "VMware1!")
+
+#addAdGroup()
+syncAdGroup()
+
+
