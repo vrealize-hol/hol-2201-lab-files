@@ -1,0 +1,12 @@
+git -c http.sslVerify=false clone ${input.GIT_REPO_HTTP_URL}
+sed -i "s/192.168.110.122/$IPADDRESS/g" ${input.GIT_REPO_NAME}/configBackup/opencart.conf
+sudo mv ${input.GIT_REPO_NAME}/configBackup/opencart.conf /etc/apache2/sites-enabled/opencart.conf
+sudo rm /etc/apache2/sites-enabled/000-default.conf
+sudo a2enmod rewrite
+sudo mysql --user=root --password=VMware1\! < ${input.GIT_REPO_NAME}/configBackup/opencartdb.sql
+sudo mysql --user=root --password=VMware1\! --database=opencartdb --execute="GRANT ALL ON opencartdb.* TO 'opencart_user'@'localhost' IDENTIFIED BY 'strong_password';"
+sed -i "s/127.0.0.1/$IPADDRESS/g" ${input.GIT_REPO_NAME}/opencart/config.php
+sudo cp -TRv ${input.GIT_REPO_NAME}/ /var/www/html/
+sudo chown www-data:www-data -R /var/www/html/
+sudo /etc/init.d/nginx stop
+sudo apache2ctl restart

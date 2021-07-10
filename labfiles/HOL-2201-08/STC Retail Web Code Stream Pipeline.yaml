@@ -1,0 +1,147 @@
+---
+project: Web Development
+kind: PIPELINE
+name: STC Retail Web Pipeline
+icon: organization,left, is-pink
+enabled: true
+description: ''
+concurrency: 10
+options: [
+  GIT_TRIGGER]
+input:
+  flavor: ''
+  GIT_BRANCH_NAME: ''
+  GIT_CHANGE_SUBJECT: ''
+  GIT_COMMIT_ID: ''
+  GIT_EVENT_DESCRIPTION: ''
+  GIT_EVENT_OWNER_NAME: ''
+  GIT_EVENT_TIMESTAMP: ''
+  GIT_REPO_HTTP_URL: ''
+  GIT_REPO_NAME: ''
+  GIT_SERVER_URL: ''
+  image: ''
+  projectCode: ''
+_inputMeta:
+  flavor:
+    description: ''
+    mandatory: false
+  GIT_SERVER_URL:
+    description: ''
+    mandatory: false
+  image:
+    description: ''
+    mandatory: false
+  GIT_BRANCH_NAME:
+    description: ''
+    mandatory: false
+  GIT_REPO_HTTP_URL:
+    description: ''
+    mandatory: true
+  projectCode:
+    description: ''
+    mandatory: false
+  GIT_COMMIT_ID:
+    description: ''
+    mandatory: false
+  GIT_EVENT_TIMESTAMP:
+    description: ''
+    mandatory: false
+  GIT_EVENT_DESCRIPTION:
+    description: ''
+    mandatory: false
+  GIT_REPO_NAME:
+    description: ''
+    mandatory: true
+  GIT_EVENT_OWNER_NAME:
+    description: ''
+    mandatory: false
+  GIT_CHANGE_SUBJECT:
+    description: ''
+    mandatory: false
+workspace:
+  endpoint: Web Development Docker
+  image: gitlab.hol:5050/hol/registry/k8s-ci:latest
+  registry: ''
+  path: ''
+  autoCloneForTrigger: false
+  limits:
+    cpu: 1.0
+    memory: 512
+stageOrder:
+- STC-Site-Deploy
+stages:
+  STC-Site-Deploy:
+    taskOrder:
+    - Deploy
+    - Sleep
+    - DeployOpenCart
+    - Verify
+    - Destroy
+    tasks:
+      Sleep:
+        type: CI
+        input:
+          steps:
+          - sleep 90
+          export: [
+            ]
+          artifacts: [
+            ]
+          process: [
+            ]
+      Destroy:
+        type: Blueprint
+        preCondition: ${STC-Site-Deploy.Verify.status} == "COMPLETED"
+        input:
+          action: DeleteDeployment
+          deploymentName: ${STC-Site-Deploy.Deploy.output.deploymentName}
+      Deploy:
+        type: Blueprint
+        input:
+          action: CreateDeployment
+          deploymentName: ''
+          blueprint: Git-Trigger Linux Server
+          version: '1'
+          parameters:
+            flavor: small
+            image: Ubuntu18
+            projectCode: A1234
+      DeployOpenCart:
+        type: SSH
+        input:
+          script: |-
+            git -c http.sslVerify=false clone ${input.GIT_REPO_HTTP_URL}
+            sed -i "s/192.168.110.122/$IPADDRESS/g" ${input.GIT_REPO_NAME}/configBackup/opencart.conf
+            sudo mv ${input.GIT_REPO_NAME}/configBackup/opencart.conf /etc/apache2/sites-enabled/opencart.conf
+            sudo rm /etc/apache2/sites-enabled/000-default.conf
+            sudo a2enmod rewrite
+            sudo mysql --user=root --password=VMware1\! < ${input.GIT_REPO_NAME}/configBackup/opencartdb.sql
+            sudo mysql --user=root --password=VMware1\! --database=opencartdb --execute="GRANT ALL ON opencartdb.* TO 'opencart_user'@'localhost' IDENTIFIED BY 'strong_password';"
+            sed -i "s/127.0.0.1/$IPADDRESS/g" ${input.GIT_REPO_NAME}/opencart/config.php
+            sudo cp -TRv ${input.GIT_REPO_NAME}/ /var/www/html/
+            sudo chown www-data:www-data -R /var/www/html/
+            sudo /etc/init.d/nginx stop
+            sudo apache2ctl restart
+          username: holuser
+          password: VMware1!
+          passphrase: ''
+          privatekey: ''
+          host: ' ${STC-Site-Deploy.Deploy.output.deploymentDetails.resources.linux.address}'
+          arguments: [
+            ]
+          environmentVariables:
+            IPADDRESS: ' ${STC-Site-Deploy.Deploy.output.deploymentDetails.resources.linux.address}'
+      Verify:
+        type: UserOperation
+        input:
+          approvers:
+          - holadmin
+          approverGroups: [
+            ]
+          summary: Please Verify ${STC-Site-Deploy.Deploy.output.deploymentName}
+          description: Check the website at http://${STC-Site-Deploy.Deploy.output.deploymentDetails.resources.linux.address}
+          sendemail: false
+          expiration: 3
+          expirationUnit: DAYS
+          pipelineName: ${name}
+          cancelPreviousPendingUserOp: false

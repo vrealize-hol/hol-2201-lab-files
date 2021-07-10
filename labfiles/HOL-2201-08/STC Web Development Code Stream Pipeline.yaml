@@ -1,0 +1,95 @@
+---
+project: Web Development
+kind: PIPELINE
+name: STC Web Development Pipeline
+icon: organization,left, is-pink
+enabled: true
+description: ''
+concurrency: 10
+input:
+  flavor: ''
+  image: ''
+  machineName: ''
+  projectCode: ''
+  template_DeploymentName: ''
+_inputMeta:
+  flavor:
+    description: ''
+    mandatory: true
+  template_DeploymentName:
+    description: ''
+    mandatory: true
+  image:
+    description: ''
+    mandatory: true
+  projectCode:
+    description: ''
+    mandatory: true
+  machineName:
+    description: ''
+    mandatory: true
+workspace:
+  endpoint: Web Development Docker
+  image: gitlab.hol:5050/hol/registry/k8s-ci:latest
+  registry: ''
+  path: ''
+  autoCloneForTrigger: false
+  limits:
+    cpu: 1.0
+    memory: 512
+stageOrder:
+- STC-Site-Deploy
+stages:
+  STC-Site-Deploy:
+    taskOrder:
+    - Deploy
+    - Sleep
+    - DeployOpenCart
+    tasks:
+      Sleep:
+        type: CI
+        input:
+          steps:
+          - sleep 90
+          export: [
+            ]
+          artifacts: [
+            ]
+          process: [
+            ]
+      Deploy:
+        type: Blueprint
+        input:
+          action: CreateDeployment
+          deploymentName: ${input.template_DeploymentName}
+          blueprint: Base Linux Server
+          version: '1'
+          parameters:
+            flavor: ${input.flavor}
+            image: ${input.image}
+            projectCode: ${input.projectCode}
+            machineName: ${input.machineName}
+      DeployOpenCart:
+        type: SSH
+        input:
+          script: |-
+            wget -O opencart.zip --no-check-certificate https://gitlab.hol/hol/stc-website/-/raw/main/opencartInstaller/opencart-3.0.3.7.zip?inline=false
+            unzip opencart.zip
+            sudo cp -R ./upload /var/www/html/opencart
+            sudo chown www-data:www-data -R /var/www/html/opencart
+            wget -O opencart.conf --no-check-certificate https://gitlab.hol/hol/stc-website/-/raw/main/configBackup/opencart.conf?inline=false
+            sed -i "s/192.168.110.122/$IPADDRESS/g" opencart.conf
+            sudo mv opencart.conf /etc/apache2/sites-enabled/opencart.conf
+            sudo rm /etc/apache2/sites-enabled/000-default.conf
+            sudo /etc/init.d/nginx stop
+            sudo a2enmod rewrite
+            sudo apache2ctl restart
+          username: holuser
+          password: VMware1!
+          passphrase: ''
+          privatekey: ''
+          host: ' ${STC-Site-Deploy.Deploy.output.deploymentDetails.resources.linux.address}'
+          arguments: [
+            ]
+          environmentVariables:
+            IPADDRESS: ' ${STC-Site-Deploy.Deploy.output.deploymentDetails.resources.linux.address}'
