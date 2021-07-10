@@ -1,0 +1,77 @@
+formatVersion: 1
+name: Monolithic Linux Server
+version: 1
+inputs:
+  machineName:
+    title: Server name
+    type: string
+  serverRole:
+    title: Server Role
+    type: string
+    oneOf:
+      - title: Web Server
+        const: web
+      - title: Database Server
+        const: sql
+      - title: Application Server
+        const: app
+  flavor:
+    title: Server Size
+    type: string
+    enum:
+      - small
+      - medium
+      - large
+  image:
+    title: Operating System
+    type: string
+    enum:
+      - Ubuntu20
+      - Ubuntu18
+  projectCode:
+    title: Project Code
+    type: string
+resources:
+  linux:
+    type: Cloud.vSphere.Machine
+    properties:
+      machineName: '${input.machineName}'
+      role: '${input.serverRole}'
+      image: '${input.image}'
+      flavor: '${input.flavor}'
+      folderName: 'Workloads/${env.projectName}'
+      snapshotLimit: 1
+      tags:
+        - key: projectCode
+          value: '${input.projectCode}'
+        - key: vraProjectName
+          value: '${env.projectName}'
+      constraints:
+        - tag: 'cloud:vsphere'
+      networks:
+        - network: '${resource.network.id}'
+          assignment: static
+      cloudConfig: |
+        #cloud-config
+        runcmd:
+          - sudo systemctl stop nginx
+          - sudo systemctl disable nginx
+          - sudo git -c http.sslVerify=false clone https://gitlab.hol/hol/stc-website.git
+          - sudo sed -i "s/192.168.110.122/${resource.linux.networks[0].address}/g" stc-website/configBackup/opencart.conf
+          - sudo mv stc-website/configBackup/opencart.conf /etc/apache2/sites-enabled/opencart.conf
+          - sudo rm /etc/apache2/sites-enabled/000-default.conf
+          - sudo a2enmod rewrite
+          - sudo mysql --user=root --password=VMware1! < stc-website/configBackup/opencartdb.sql
+          - sudo mysql --user=root --password=VMware1! --database=opencartdb --execute="GRANT ALL ON opencartdb.* TO 'opencart_user'@'localhost' IDENTIFIED BY 'strong_password';"
+          - sudo sed -i "s/127.0.0.1/${resource.linux.networks[0].address}/g" stc-website/opencart/config.php
+          - sudo cp -TRv stc-website/ /var/www/html/
+          - sudo chown www-data:www-data -R /var/www/html/
+          - sudo apache2ctl restart
+  network:
+    type: Cloud.vSphere.Network
+    metadata:
+    properties:
+      networkType: existing
+      constraints:
+        - tag: 'net:vsphere'
+

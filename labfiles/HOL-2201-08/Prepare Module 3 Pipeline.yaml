@@ -1,0 +1,107 @@
+---
+project: Web Hosting
+kind: PIPELINE
+name: Prepare Module 3
+icon: organization,left, is-warning
+enabled: true
+concurrency: 10
+workspace:
+  endpoint: ''
+  image: ''
+  registry: ''
+  path: ''
+  autoCloneForTrigger: false
+  limits:
+    memory: 512
+    cpu: 1.0
+stageOrder:
+- Prepare
+- Deploy
+- Remove
+stages:
+  Prepare:
+    taskOrder:
+    - Get Refresh Token
+    tasks:
+      Get Refresh Token:
+        type: REST
+        input:
+          action: post
+          url: https://${var.vraFQDN}/csp/gateway/am/api/login?access_token
+          headers:
+            Accept: application/json
+            Content-Type: application/json
+          payload: |-
+            {
+              "username": "${var.vraUser}",
+              "password": "${var.vraUserPassword}"
+            }
+  Deploy:
+    taskOrder:
+    - Install Monolithic Retail Server
+    tasks:
+      Install Monolithic Retail Server:
+        type: Blueprint
+        input:
+          action: CreateDeployment
+          deploymentName: Sci-Tech Corp - Retail Website - Monolithic
+          blueprint: Monolithic Server
+          version: '1'
+          parameters:
+            serverRole: web
+            flavor: medium
+            image: Ubuntu18
+            projectCode: A1234
+            machineName: prd-web01
+  Remove:
+    taskOrder:
+    - Get Ubuntu Deployment Id,Get Windows Deployment Id
+    - Remove HOL Ubuntu Deployment,Remove HOL Windows Deployment
+    tasks:
+      Remove HOL Ubuntu Deployment:
+        type: REST
+        preCondition: ${Remove.Get Ubuntu Deployment Id.output.responseBody.totalElements} > 0
+        input:
+          action: delete
+          url: https://${var.vraFQDN}/iaas/api/deployments/${Remove.Get Ubuntu Deployment Id.output.responseBody.content[0].id}
+          headers:
+            Accept: application/json
+            Content-Type: application/json
+            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+          payload: ''
+      Get Windows Deployment Id:
+        type: REST
+        input:
+          action: get
+          url: https://${var.vraFQDN}/iaas/api/deployments?$filter=(name eq 'hol-windows')
+          headers:
+            Accept: application/json
+            Content-Type: application/json
+            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+          payload: ''
+      Remove HOL Windows Deployment:
+        type: REST
+        preCondition: ${Remove.Get Windows Deployment Id.output.responseBody.totalElements} > 0
+        input:
+          action: delete
+          url: https://${var.vraFQDN}/iaas/api/deployments/${Remove.Get Windows Deployment Id.output.responseBody.content[0].id}
+          headers:
+            Accept: application/json
+            Content-Type: application/json
+            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+          payload: ''
+      Get Ubuntu Deployment Id:
+        type: REST
+        input:
+          action: get
+          url: https://${var.vraFQDN}/iaas/api/deployments?$filter=(name eq 'hol-ubuntu')
+          headers:
+            Accept: application/json
+            Content-Type: application/json
+            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+          payload: ''
+rollbacks:
+- inputs:
+    deployment_name: Sci Tech Corp - Retail Website - Monolithic
+  name: Delete deployment
+  stage: Deploy
