@@ -190,7 +190,7 @@ def getAvailableEnterpriseGroups(searchString):
                 groupFound = True
                 groupId = content['results'][0]['id']
             else:
-                if attempts > 12:     # 60 seconds
+                if attempts > 24:     # 60 seconds
                     log('Failed to find AD group in vRA. Exiting ...')
                     quit()
                 else:
@@ -258,7 +258,7 @@ def createProject():
         json_data = response.json()
         project_id = json_data['id']
         log('Successfully created the Project')
-        return project_id[0]
+        return project_id
     else:
         log('Failed to create the Project. Exiting ...')
         quit()
