@@ -707,7 +707,12 @@ headers = {'Content-Type': 'application/json', 'Accept': 'application/json',
 addAdGroup()
 syncAdGroup()
 
+log('\n*** IMPORTANT ***')
+log('You must complete some steps in the vRealize Automation user interface before continuing\n')
+log('Once you have performed the steps shown in module 2 of the lab manual,')
+log('  you can return here and continue below\n')
 
+"""
 ###########################################
 # CONFIGURE vRA
 ###########################################
@@ -788,3 +793,5 @@ importAdGroup(CustomGroupId)
 
 log('\n\n\nConfiguration script completed')
 log('Follow instructions in the lab manual to complete the setup before proceeding.')
+
+"""
