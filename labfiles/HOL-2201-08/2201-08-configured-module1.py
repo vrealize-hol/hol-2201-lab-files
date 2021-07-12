@@ -190,7 +190,7 @@ def getAvailableEnterpriseGroups(searchString):
                 groupFound = True
                 groupId = content['results'][0]['id']
             else:
-                if attempts > 6:     # 30 seconds
+                if attempts > 12:     # 60 seconds
                     log('Failed to find AD group in vRA. Exiting ...')
                     quit()
                 else:
@@ -720,10 +720,8 @@ access_key = getVraToken("holadmin@corp.local", "VMware1!")
 headers1 = {'Content-Type': 'application/json',
             'Authorization': 'Bearer {0}'.format(access_key)}
 
-projId = 'ece13eca-e5fb-4386-b58d-c2a678fcac54'           
-
 # Add AD group to vRA
-groupName = 'web-dev-team@corp.local'
+groupName = 'web-dev'
 
 if checkEnterpriseGroups(groupName):
     logMessage = groupName + ' group already exists in vRA'
