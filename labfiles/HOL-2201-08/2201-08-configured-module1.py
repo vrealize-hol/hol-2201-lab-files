@@ -1,8 +1,8 @@
 import urllib3
 import sys
 import subprocess
-from time import strftime, sleep
 import time
+from time import sleep
 import requests
 import json
 urllib3.disable_warnings()
@@ -179,18 +179,25 @@ def checkEnterpriseGroups(groupName):
 def getAvailableEnterpriseGroups(searchString):
     api_url = '{0}csp/gateway/am/api/groups/search?searchTerm={1}'.format(api_url_base, searchString)
     groupFound = False
+    attempts = 0
     while not groupFound:
+        attempts += 1
         response = requests.get(api_url, headers=headers1, verify=False)
         if response.status_code == 200:
             content = response.json()
             resultCount = content['totalResults']
             if resultCount == 1:
-                groupId = content['results'][0]['id']
                 groupFound = True
+                groupId = content['results'][0]['id']
             else:
-                log(' Waitng for AD group to be seen in vRA')
-                time.sleep(5)       # wait 5 seconds and try again
+                if attempts > 6:     # 30 seconds
+                    log('Failed to find AD group in vRA. Exiting ...')
+                    quit()
+                else:
+                    log(' Waiting for AD group to be seen in vRA')
+                    time.sleep(5)       # wait 5 seconds and try again
     return(groupId)
+
 
 def setGroupRoles(group):
     api_url = '{0}csp/gateway/portal/api/orgs/7e3973a7-94dc-4953-8581-f1e912768f34/groups'.format(api_url_base)
@@ -272,13 +279,22 @@ def configureGithub(projectId):
         "name":"GitLab CS",
         "syncEnabled": "true"
         }
-    response = requests.post(api_url, headers=headers1,
-                             data=json.dumps(data), verify=False)
-    if response.status_code == 201:
-        log('Successfully added cloud template repo to project')
-    else:
-        log('Failed to add the cloud template repo to project. Exiting ...')
-        quit()
+    projectFound = False
+    attempts = 0
+    while not projectFound:
+        response = requests.post(api_url, headers=headers1,
+                                data=json.dumps(data), verify=False)
+        if response.status_code == 201:
+            log('Successfully added cloud template repo to project')
+            projectFound = True
+        else:
+            attempts += 1
+            if attempts > 12:    # 60 seconds and still no integration
+                log('Failed to add the cloud template repo to project. Exiting ...')
+                quit()
+            else:
+                log('  Waiting for GitLab integration with the project')
+                time.sleep(5)
 
 def updateABX():
     # updates the ABX action to apply to all projects
@@ -359,19 +375,30 @@ def updateSubscription(projectId):
 
 def getCloudTemplateId(projectID, ctName):
     api_url = '{0}blueprint/api/blueprints'.format(api_url_base)
-    response = requests.get(api_url, headers=headers1, verify=False)
-    if response.status_code == 200:
-        json_data = response.json()
-        templates = json_data['content']
-        for template in templates:
-            if ctName in template['name']:  # Looking to match the cloud template name
-                if projectID in template['projectId']:
-                    ctId = template['id']
-                    log('Found the {0} cloud template'.format(ctName))
-                    return ctId
-    else:
-        log('Failed to find the cloud template named ' + ctName + '. Exiting ...')
-        quit()
+    templateFound = False
+    attempts = 0
+    while not templateFound:
+        response = requests.get(api_url, headers=headers1, verify=False)
+        if response.status_code == 200:
+            json_data = response.json()
+            templates = json_data['content']
+            for template in templates:
+                if ctName in template['name']:  # Looking to match the cloud template name
+                    if projectID in template['projectId']:
+                        ctId = template['id']
+                        log('Found the {0} cloud template'.format(ctName))
+                        return ctId
+            attempts += 1
+            if attempts > 6:    # still waiting after 30 seconds
+                log('Failed to find the cloud template named ' + ctName + '. Exiting ...')
+                quit()
+            else:
+                log('  Waiting for cloud templates to sync from the GitLab repo')
+                time.sleep(5)
+        else:
+            log('Failed to find the cloud template for this project. Exiting ...')
+            quit()
+
 
 def releaseCloudTemplate(bpid, ver):
     api_url = '{0}blueprint/api/blueprints/{1}/versions/{2}/actions/release'.format(
@@ -425,19 +452,26 @@ def shareCTs(source, project):
 def getContentId():
     # returns the item ID of the Web Dev Base Linux cloud template content
     api_url = '{0}catalog/api/admin/items'.format(api_url_base)
-    response = requests.get(api_url, headers=headers1, verify=False)
-    if response.status_code == 200:
-        json_data = response.json()
-        items = json_data['content']
-        for item in items:
-            if item['sourceName'] == 'Web Development Templates':
-                if item['name'] == 'Base Linux Server':
-                    Id = item['id']
-                    log('Got content item ID')
-                    return Id   
-    else:
-        log('Failed to get the ID of the content item. Exiting ...')
-        quit()
+    contentFound = False
+    attempts = 0
+    while not contentFound:
+        response = requests.get(api_url, headers=headers1, verify=False)
+        if response.status_code == 200:
+            json_data = response.json()
+            items = json_data['content']
+            for item in items:
+                if item['sourceName'] == 'Web Development Templates':
+                    if item['name'] == 'Base Linux Server':
+                        Id = item['id']
+                        log('Got content item ID')
+                        return Id
+            attempts += 1
+            if attempts > 6:    # 30 seconds
+                log('Failed to add web-dev templates as Service Broker content')
+                quit()
+            else:
+                log('  Waiting for web-dev templates to be available to Service Broker')
+                time.sleep(5)
 
 
 def updateIcon(itemId):
@@ -543,6 +577,7 @@ def getVropsToken(user, passwd):
 
 def waitForVM(vmName):
     # check for the VM name in inventory and wait until it's found or the operation times out
+    # this funcion not needed but will keep in script for future use
     api_url = '{0}resources?name={1}'.format(api_url_base, vmName)
     attempts = 0
     maxAttempts = 50    # multiply by 10 seconds to set maximum wait time to find the VM
@@ -689,6 +724,7 @@ projId = 'ece13eca-e5fb-4386-b58d-c2a678fcac54'
 
 # Add AD group to vRA
 groupName = 'web-dev-team@corp.local'
+
 if checkEnterpriseGroups(groupName):
     logMessage = groupName + ' group already exists in vRA'
     log('\n')
@@ -698,12 +734,11 @@ if checkEnterpriseGroups(groupName):
     quit()
 else:
     log('Did not find the {0} group in vRA. Adding it.'.format(groupName))
-id = getAvailableEnterpriseGroups('web-dev-team@corp.local')
+id = getAvailableEnterpriseGroups(groupName)
 setGroupRoles(id)
 
 # Add the project to Cloud Assembly
 projId = createProject()
-time.sleep(5)
 
 # Add the GitHub cloud template repo to the project
 configureGithub(projId)
@@ -714,10 +749,6 @@ updateABX()
 # Update the subscription
 updateSubscription(projId)
 
-# Pause to give time for cloud templates to sync from GitLab
-log('Pausing to give time for cloud templates to sync from GitLab')
-time.sleep(20)
-
 # Find the cloud template Id and then release the template to the catalog
 templateId = getCloudTemplateId(projId, 'Base Linux Server')
 releaseCloudTemplate(templateId, 1)
@@ -727,7 +758,6 @@ catSource = addContentSoure(projId)
 shareCTs(catSource, projId)
 
 # Get the id of the content item and update its icon and form
-time.sleep(5)
 contentId = getContentId()
 updateIcon(contentId)
 updateForm(contentId)
