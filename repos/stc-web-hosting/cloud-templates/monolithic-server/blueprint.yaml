@@ -1,5 +1,5 @@
 formatVersion: 1
-name: Monolithic Linux Server
+name: Monolithic Server
 version: 1
 inputs:
   machineName:
