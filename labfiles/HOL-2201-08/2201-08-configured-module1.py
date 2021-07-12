@@ -172,7 +172,7 @@ def checkEnterpriseGroups(groupName):
         results = response.json()['results']
         found = False
         for result in results:
-            if result['displayName'] == groupName:
+            if groupName in result['displayName']:
                 found = True
         return(found)
 
@@ -724,14 +724,16 @@ headers1 = {'Content-Type': 'application/json',
 groupName = 'web-dev'
 
 if checkEnterpriseGroups(groupName):
-    logMessage = groupName + ' group already exists in vRA'
+    logMessage = 'The ' + groupName + ' group already exists in vRA'
     log('\n')
     log(logMessage)
-    log('This script cannot proceed. You must completed module 1 or end this lab')
-    log('   and start a new lab where you can bypass module 1 by running this script\n\n')
+    log('This script cannot proceed. You must complete module 1 --OR--')
+    log('   end this lab and start a new lab where you can bypass module 1 by running this script\n')
+    log('See the beginning of modlue 2 in the lab manual for instructions.\n\n')
     quit()
 else:
     log('Did not find the {0} group in vRA. Adding it.'.format(groupName))
+
 id = getAvailableEnterpriseGroups(groupName)
 setGroupRoles(id)
 
