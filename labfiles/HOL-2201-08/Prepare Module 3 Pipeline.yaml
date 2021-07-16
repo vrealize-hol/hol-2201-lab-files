@@ -102,6 +102,6 @@ stages:
           payload: ''
 rollbacks:
 - inputs:
-    deployment_name: Sci Tech Corp - Retail Website - Monolithic
+    deployment_name: Sci-Tech Corp - Retail Website - Monolithic
   name: Delete deployment
   stage: Deploy
