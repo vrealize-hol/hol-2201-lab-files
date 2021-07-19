@@ -23,7 +23,6 @@ stages:
   Create:
     taskOrder:
     - Create Install Monitoring Agent Subscription,Create Remove Monitoring Agent Subscription
-    - Create Password Secret
     - Update Project Naming Template
     tasks:
       Create Remove Monitoring Agent Subscription:
@@ -56,21 +55,6 @@ stages:
               "constraints": {
                 "projectId": null
               }
-            }
-      Create Password Secret:
-        type: REST
-        input:
-          action: post
-          url: https://${var.vraFQDN}/platform/api/secrets
-          headers:
-            Accept: application/json
-            Content-Type: application/json
-            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
-          payload: |-
-            {
-              "name":"password",
-              "value":"VMware1!",
-              "projectId": "${Prepare.Get Project Id.output.responseBody.content[0].id}"
             }
       Create Install Monitoring Agent Subscription:
         type: REST
