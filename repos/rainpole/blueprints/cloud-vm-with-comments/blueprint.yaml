@@ -10,7 +10,7 @@
 #********************************************************************************************************************************
 
 # Don't forget to give your cloud template a useful name!
-version: 2
+version: 3
 name: vSphere VM with Comments
 formatVersion: 1
 inputs:
@@ -40,7 +40,7 @@ resources:
         chpasswd:
           list: |
             ${input.username}:${input.password}
-            expire: false
+          expire: false
         users:
           - default
           - name: ${input.username}
