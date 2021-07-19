@@ -1,0 +1,237 @@
+---
+project: Web Hosting
+kind: PIPELINE
+name: Prepare Module 5
+icon: organization,left, is-warning
+enabled: true
+concurrency: 10
+workspace:
+  endpoint: HOL Docker
+  image: ''
+  registry: ''
+  path: ''
+  autoCloneForTrigger: false
+  limits:
+    cpu: 1.0
+    memory: 512
+stageOrder:
+- Prepare
+- Create
+- Deploy
+- Remove
+stages:
+  Create:
+    taskOrder:
+    - Create Install Monitoring Agent Subscription,Create Remove Monitoring Agent Subscription
+    - Update Project Naming Template
+    tasks:
+      Create Remove Monitoring Agent Subscription:
+        type: REST
+        input:
+          action: post
+          url: https://${var.vraFQDN}/event-broker/api/subscriptions
+          headers:
+            Accept: application/json
+            Content-Type: application/json
+            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+          payload: |-
+            {
+              "id": "sub_1625832003391",
+              "type": "RUNNABLE",
+              "name": "Remove Application Monitoring Agent",
+              "description": "",
+              "disabled": false,
+              "eventTopicId": "compute.removal.pre",
+              "subscriberId": "temporary-value",
+              "blocking": true,
+              "contextual": false,
+              "criteria": "event.data.customProperties[\"agent\"] == \"telegraf\"",
+              "runnableType": "extensibility.vro",
+              "runnableId": "9874f83a-a292-4ba7-8b83-19151ccbdb60",
+              "timeout": 0,
+              "priority": 10,
+              "recoverRunnableType": null,
+              "recoverRunnableId": null,
+              "constraints": {
+                "projectId": null
+              }
+            }
+      Create Install Monitoring Agent Subscription:
+        type: REST
+        input:
+          action: post
+          url: https://${var.vraFQDN}/event-broker/api/subscriptions
+          headers:
+            Accept: application/json
+            Content-Type: application/json
+            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+          payload: |-
+            {
+              "id": "sub_1625831407473",
+              "type": "RUNNABLE",
+              "name": "Install Application Monitoring Agent",
+              "description": "",
+              "disabled": false,
+              "eventTopicId": "compute.provision.post",
+              "subscriberId": "temporary-value",
+              "blocking": true,
+              "contextual": false,
+              "criteria": "event.data.customProperties[\"agent\"] == \"telegraf\"",
+              "runnableType": "extensibility.vro",
+              "runnableId": "06dededd-c7d1-4992-b36c-9bc9257edbf3",
+              "timeout": 0,
+              "priority": 10,
+              "recoverRunnableType": "extensibility.vro",
+              "recoverRunnableId": "9874f83a-a292-4ba7-8b83-19151ccbdb60",
+              "constraints": {
+                 "projectId": null
+              }
+            }
+      Update Project Naming Template:
+        type: REST
+        input:
+          action: patch
+          url: https://${var.vraFQDN}/iaas/api/projects/${Prepare.Get Project Id.output.responseBody.content[0].id}
+          headers:
+            Accept: application/json
+            Content-Type: application/json
+            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+          payload: |
+            {
+              "administrators": [
+                {
+                  "email": "webmgr@corp.local",
+                  "type": "user"
+                }
+              ],
+              "members": [
+                {
+                  "email": "web-admin-team@corp.local@corp.local",
+                  "type": "group"
+                },
+                {
+                  "email": "app-support-team@corp.local@corp.local",
+                  "type": "group"
+                }
+              ],
+              "viewers": [],
+              "zones": [
+                {
+                  "zoneId": "0acaaec6-cf2d-4610-baaf-25890f06d3c9",
+                  "priority": 0,
+                  "maxNumberInstances": 0,
+                  "allocatedInstancesCount": 6,
+                  "memoryLimitMB": 0,
+                  "allocatedMemoryMB": 12288,
+                  "cpuLimit": 0,
+                  "allocatedCpu": 6,
+                  "storageLimitGB": 0,
+                  "allocatedStorageGB": 48.0
+                }
+              ],
+              "constraints": {},
+              "operationTimeout": 0,
+              "machineNamingTemplate": "\${resource.name}\${####}",
+              "sharedResources": true,
+              "placementPolicy": "DEFAULT",
+              "customProperties": {},
+              "name": "Web Hosting",
+              "description": ""
+            }
+  Prepare:
+    taskOrder:
+    - Get Refresh Token
+    - Get Project Id
+    tasks:
+      Get Project Id:
+        type: REST
+        input:
+          action: get
+          url: https://${var.vraFQDN}/iaas/api/projects?$filter=(name eq 'Web Hosting')
+          headers:
+            Accept: application/json
+            Content-Type: application/json
+            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+          payload: ''
+      Get Refresh Token:
+        type: REST
+        input:
+          action: post
+          url: https://${var.vraFQDN}/csp/gateway/am/api/login?access_token
+          headers:
+            Accept: application/json
+            Content-Type: application/json
+          payload: |-
+            {
+              "username": "${var.vraUser}",
+              "password": "${var.vraUserPassword}"
+            }
+  Deploy:
+    taskOrder:
+    - Deploy Distributed Website
+    tasks:
+      Deploy Distributed Website:
+        type: Blueprint
+        input:
+          action: CreateDeployment
+          deploymentName: Sci-Tech Corporation - Retail Website - Distributed
+          blueprint: distributed website
+          version: '1'
+          parameters:
+            enviornment: prd
+            tier2_count: '1'
+            tier1_ServerRole: web
+            tier1_count: '3'
+            tier2_ServerRole: sql
+            tier1_image: Ubuntu18
+            tier2_flavor: medium
+            projectCode: A1234
+            tier1_flavor: medium
+            tier2_image: Ubuntu18
+  Remove:
+    taskOrder:
+    - Get Ubuntu Deployment Id,Get Windows Deployment Id
+    - Remove HOL Ubuntu Deployment,Remove HOL Windows Deployment
+    tasks:
+      Remove HOL Ubuntu Deployment:
+        type: REST
+        preCondition: ${Remove.Get Ubuntu Deployment Id.output.responseBody.totalElements} > 0
+        input:
+          action: delete
+          url: https://${var.vraFQDN}/iaas/api/deployments/${Remove.Get Ubuntu Deployment Id.output.responseBody.content[0].id}
+          headers:
+            Accept: application/json
+            Content-Type: application/json
+            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+          payload: ''
+      Get Windows Deployment Id:
+        type: REST
+        input:
+          action: get
+          url: https://${var.vraFQDN}/iaas/api/deployments?$filter=(name eq 'hol-windows')
+          headers:
+            Accept: application/json
+            Content-Type: application/json
+            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+          payload: ''
+      Remove HOL Windows Deployment:
+        type: REST
+        preCondition: ${Remove.Get Windows Deployment Id.output.responseBody.totalElements} > 0
+        input:
+          action: delete
+          url: https://${var.vraFQDN}/iaas/api/deployments/${Remove.Get Windows Deployment Id.output.responseBody.content[0].id}
+          headers:
+            Accept: application/json
+            Content-Type: application/json
+            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+          payload: ''
+      Get Ubuntu Deployment Id:
+        type: REST
+        input:
+          action: get
+          url: https://${var.vraFQDN}/iaas/api/deployments?$filter=(name eq 'hol-ubuntu')
+          headers:
+            Accept: application/json
+            Content-Type: application/json
+            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+          payload: ''
