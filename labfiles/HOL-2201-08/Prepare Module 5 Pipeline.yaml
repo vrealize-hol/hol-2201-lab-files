@@ -12,11 +12,12 @@ workspace:
   path: ''
   autoCloneForTrigger: false
   limits:
-    memory: 512
     cpu: 1.0
+    memory: 512
 stageOrder:
 - Prepare
 - Create
+- Deploy
 - Remove
 stages:
   Create:
@@ -181,6 +182,28 @@ stages:
               "username": "${var.vraUser}",
               "password": "${var.vraUserPassword}"
             }
+  Deploy:
+    taskOrder:
+    - Deploy Distributed Website
+    tasks:
+      Deploy Distributed Website:
+        type: Blueprint
+        input:
+          action: CreateDeployment
+          deploymentName: Sci-Tech Corporation - Retail Website - Distributed
+          blueprint: distributed website
+          version: '1'
+          parameters:
+            enviornment: prd
+            tier2_count: '1'
+            tier1_ServerRole: web
+            tier1_count: '3'
+            tier2_ServerRole: sql
+            tier1_image: Ubuntu18
+            tier2_flavor: medium
+            projectCode: A1234
+            tier1_flavor: medium
+            tier2_image: Ubuntu18
   Remove:
     taskOrder:
     - Get Ubuntu Deployment Id,Get Windows Deployment Id
