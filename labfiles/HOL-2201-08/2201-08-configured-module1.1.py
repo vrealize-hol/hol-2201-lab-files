@@ -246,7 +246,7 @@ def createProject():
         "members": [
                     {
                         "type": "group",
-                        "email": "web-dev-team@corp.local"
+                        "email": "web-dev-team@corp.local@corp.local"
                     }
                 ],
         "machineNamingTemplate": "${resource.name}${####}",
