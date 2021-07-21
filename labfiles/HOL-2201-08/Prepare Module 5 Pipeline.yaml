@@ -33,7 +33,7 @@ stages:
           headers:
             Accept: application/json
             Content-Type: application/json
-            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+            Authorization: ${Prepare.Get Bearer Token.output.responseHeaders.Authorization}
           payload: |-
             {
               "id": "sub_1625832003391",
@@ -64,7 +64,7 @@ stages:
           headers:
             Accept: application/json
             Content-Type: application/json
-            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+            Authorization: ${Prepare.Get Bearer Token.output.responseHeaders.Authorization}
           payload: |-
             {
               "id": "sub_1625831407473",
@@ -95,7 +95,7 @@ stages:
           headers:
             Accept: application/json
             Content-Type: application/json
-            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+            Authorization: ${Prepare.Get Bearer Token.output.responseHeaders.Authorization}
           payload: |
             {
               "administrators": [
@@ -140,7 +140,7 @@ stages:
             }
   Prepare:
     taskOrder:
-    - Get Refresh Token
+    - Get Bearer Token
     - Get Project Id
     tasks:
       Get Project Id:
@@ -151,9 +151,9 @@ stages:
           headers:
             Accept: application/json
             Content-Type: application/json
-            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+            Authorization: ${Prepare.Get Bearer Token.output.responseHeaders.Authorization}
           payload: ''
-      Get Refresh Token:
+      Get Bearer Token:
         type: REST
         input:
           action: post
@@ -202,7 +202,7 @@ stages:
           headers:
             Accept: application/json
             Content-Type: application/json
-            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+            Authorization: ${Prepare.Get Bearer Token.output.responseHeaders.Authorization}
           payload: ''
       Get Windows Deployment Id:
         type: REST
@@ -212,7 +212,7 @@ stages:
           headers:
             Accept: application/json
             Content-Type: application/json
-            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+            Authorization: ${Prepare.Get Bearer Token.output.responseHeaders.Authorization}
           payload: ''
       Remove HOL Windows Deployment:
         type: REST
@@ -223,7 +223,7 @@ stages:
           headers:
             Accept: application/json
             Content-Type: application/json
-            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+            Authorization: ${Prepare.Get Bearer Token.output.responseHeaders.Authorization}
           payload: ''
       Get Ubuntu Deployment Id:
         type: REST
@@ -233,5 +233,5 @@ stages:
           headers:
             Accept: application/json
             Content-Type: application/json
-            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+            Authorization: ${Prepare.Get Bearer Token.output.responseHeaders.Authorization}
           payload: ''
