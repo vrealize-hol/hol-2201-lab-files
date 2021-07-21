@@ -21,9 +21,9 @@ stageOrder:
 stages:
   Prepare:
     taskOrder:
-    - Get Refresh Token
+    - Get Bearer Token
     tasks:
-      Get Refresh Token:
+      Get Bearer Token:
         type: REST
         input:
           action: post
@@ -67,7 +67,7 @@ stages:
           headers:
             Accept: application/json
             Content-Type: application/json
-            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+            Authorization: ${Prepare.Get Bearer Token.output.responseHeaders.Authorization}
           payload: ''
       Get Windows Deployment Id:
         type: REST
@@ -77,7 +77,7 @@ stages:
           headers:
             Accept: application/json
             Content-Type: application/json
-            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+            Authorization: ${Prepare.Get Bearer Token.output.responseHeaders.Authorization}
           payload: ''
       Remove HOL Windows Deployment:
         type: REST
@@ -88,7 +88,7 @@ stages:
           headers:
             Accept: application/json
             Content-Type: application/json
-            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+            Authorization: ${Prepare.Get Bearer Token.output.responseHeaders.Authorization}
           payload: ''
       Get Ubuntu Deployment Id:
         type: REST
@@ -98,7 +98,7 @@ stages:
           headers:
             Accept: application/json
             Content-Type: application/json
-            Authorization: ${Prepare.Get Refresh Token.output.responseHeaders.Authorization}
+            Authorization: ${Prepare.Get Bearer Token.output.responseHeaders.Authorization}
           payload: ''
 rollbacks:
 - inputs:
