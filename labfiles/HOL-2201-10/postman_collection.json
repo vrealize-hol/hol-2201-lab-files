@@ -1,7 +1,7 @@
 {
 	"info": {
-		"_postman_id": "9f273888-1849-4142-86c6-906d2df0aedf",
-		"name": "HOL-2121-05-CMP",
+		"_postman_id": "4bc1dc80-6433-4e5c-b8d9-c5df9e070bd1",
+		"name": "HOL-2201-10-CMP",
 		"description": "End to end CAS Initial Config\n- Login via API\n- Create AWS/Azure Cloud Accounts\n- Create cloud zones\n- Create project\n- Tag zones\n- Create flavor and image mappings\n- Create storage and network profiles\n- Tag discovered Networks\n- Create a Blueprint\n- Deploy the Blueprint",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -15,7 +15,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6f35612a-0dc1-4cb8-82d7-bb1ccc7a3da5",
 								"exec": [
 									"tests[\"Status code is 200\"] = responseCode.code === 200;",
 									"tests[\"Response contains refresh token\"] = responseBody.has(\"refresh_token\");",
@@ -78,7 +77,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f47712f0-88b2-48f4-be1a-7215e83f4e96",
 								"exec": [
 									"tests[\"Status code is 200\"] = responseCode.code === 200;",
 									"tests[\"Response contains auth token\"] = responseBody.has(\"token\");",
@@ -117,8 +115,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "VI Admin Tasks",
@@ -132,18 +129,17 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "88e0497b-32d2-44bd-8a32-806ee3aef34e",
 										"exec": [
 											"var jsonData = JSON.parse(responseBody);",
 											"",
 											"for ( i=0; i<jsonData.content.length; i++) {",
-											"    if (jsonData.content[i].name.has(\"us-west-1\")) {",
+											"    if (jsonData.content[i].name.has(\"aws-us-west-1\")) {",
 											"        postman.clearEnvironmentVariable(\"awsZoneLink\");",
 											"        postman.clearEnvironmentVariable(\"awsZoneName\");",
 											"        postman.setEnvironmentVariable(\"awsZoneLink\", jsonData.content[i].id);",
 											"        postman.setEnvironmentVariable(\"awsZoneName\", jsonData.content[i].name);",
 											"    }",
-											"    if (jsonData.content[i].name.has(\"West US\")) {",
+											"    if (jsonData.content[i].name.has(\"azure-west-us\")) {",
 											"        postman.clearEnvironmentVariable(\"azureZoneLink\");",
 											"        postman.clearEnvironmentVariable(\"azureZoneName\");",
 											"        postman.setEnvironmentVariable(\"azureZoneLink\", jsonData.content[i].id);",
@@ -199,7 +195,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\"name\" : \"Project\",\n\t\"description\" : \"API Generated Project\",\n    \"administrators\" : [\n        {\n            \"email\" : \"{{projectAdmins}}\"\n        }\n    ],\n    \"members\" : [\n    \t{\n    \t\t\"email\" : \"{{projectUsers}}\"\n    \t}\n    ],\n    \"zoneAssignmentConfigurations\":[\n\t    {\n\t    \t\"zoneId\": \"{{awsZoneLink}}\",\n\t    \t\"priority\": 1\n\t    }, \n\t    {\n\t    \t\"zoneId\": \"{{azureZoneLink}}\",\n\t    \t\"priority\": 2\n\t    },\n\t    {\n\t    \t\"zoneId\": \"{{vsphereZoneLink}}\",\n\t    \t\"priority\": 1\n\t    }\n    ]\n}"
+									"raw": "{\n\t\"name\" : \"App-Dev Project\",\n\t\"description\" : \"API Generated Project\",\n    \"administrators\" : [\n        {\n            \"email\" : \"holadmin@corp.local\"\n        }\n    ],\n    \"members\" : [\n    \t{\n    \t\t\"email\" : \"holuser@corp.local\"\n    \t}\n    ],\n    \"zoneAssignmentConfigurations\":[\n\t    {\n\t    \t\"zoneId\": \"{{awsZoneLink}}\",\n\t    \t\"priority\": 1\n\t    }, \n\t    {\n\t    \t\"zoneId\": \"{{azureZoneLink}}\",\n\t    \t\"priority\": 2\n\t    },\n\t    {\n\t    \t\"zoneId\": \"{{vsphereZoneLink}}\",\n\t    \t\"priority\": 1\n\t    }\n    ]\n}"
 								},
 								"url": {
 									"raw": "{{url-home}}/iaas/api/projects",
@@ -215,9 +211,7 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "02 - Update Cloud Zone Tags",
@@ -228,18 +222,17 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "c8de3d45-6aa0-4136-bd09-4739ca12cbfd",
 										"exec": [
 											"var jsonData = JSON.parse(responseBody);",
 											"",
 											"for ( i=0; i<jsonData.content.length; i++) {",
-											"    if (jsonData.content[i].name.has(\"us-west-1\")) {",
+											"    if (jsonData.content[i].name.has(\"aws-us-west-1\")) {",
 											"        postman.clearEnvironmentVariable(\"awsZoneLink\");",
 											"        postman.clearEnvironmentVariable(\"awsZoneName\");",
 											"        postman.setEnvironmentVariable(\"awsZoneLink\", jsonData.content[i].id);",
 											"        postman.setEnvironmentVariable(\"awsZoneName\", jsonData.content[i].name);",
 											"    }",
-											"    if (jsonData.content[i].name.has(\"West US\")) {",
+											"    if (jsonData.content[i].name.has(\"azure-west-us\")) {",
 											"        postman.clearEnvironmentVariable(\"azureZoneLink\");",
 											"        postman.clearEnvironmentVariable(\"azureZoneName\");",
 											"        postman.setEnvironmentVariable(\"azureZoneLink\", jsonData.content[i].id);",
@@ -297,7 +290,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\"name\": \"{{vsphereZoneName}}\",\n    \"tags\": [\n    \t{            \n    \t\t\"key\": \"cloud\",\n            \"value\": \"vsphere\"\n        }\n    ]\n}"
+									"raw": "{\n  \"name\": \"{{vsphereZoneName}}\",\n  \"tags\": [\n    {\n      \"key\": \"cloud\",\n      \"value\": \"vsphere\"\n    }\n  ]\n}\n"
 								},
 								"url": {
 									"raw": "{{url-home}}/iaas/api/zones/{{vsphereZoneLink}}",
@@ -384,9 +377,7 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "03 - Create a Flavor Mapping",
@@ -397,7 +388,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "49bf321b-2555-483e-b47d-26a7936750df",
 										"exec": [
 											"var jsonData = JSON.parse(responseBody);",
 											"",
@@ -410,7 +400,7 @@
 											"        postman.setEnvironmentVariable(\"azureRegionLink\", jsonData.content[i].id);",
 											"        postman.setEnvironmentVariable(\"azureExternalRegionId\", jsonData.content[i].externalRegionId);",
 											"    }",
-											"    if (jsonData.content[i].externalRegionId.has(\"datacenter-21\")) {",
+											"    if (jsonData.content[i].externalRegionId.has(\"datacenter-1001\")) {",
 											"        postman.setEnvironmentVariable(\"vsphereRegionLink\", jsonData.content[i].id);",
 											"        postman.setEnvironmentVariable(\"vsphereExternalRegionId\", jsonData.content[i].externalRegionId);",
 											"    }",
@@ -448,7 +438,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "b68086d1-1fee-4fc3-901c-cc4b9db5fac0",
 										"exec": [
 											"var jsonData = JSON.parse(responseBody);\r",
 											"\r",
@@ -456,10 +445,10 @@
 											"    if (jsonData.content[i].externalRegionId.has(\"us-west-1\")) {\r",
 											"        postman.setEnvironmentVariable(\"awsFlavorMapId\", jsonData.content[i].id);\r",
 											"    }\r",
-											"    if (jsonData.content[i].externalRegionId.has(\"westus\")) {\r",
+											"    if (jsonData.content[i].externalRegionId.has(\"west-us\")) {\r",
 											"        postman.setEnvironmentVariable(\"azureFlavorMapId\", jsonData.content[i].id);\r",
 											"    }\r",
-											"    if (jsonData.content[i].externalRegionId.has(\"datacenter-21\")) {\r",
+											"    if (jsonData.content[i].externalRegionId.has(\"datacenter-1001\")) {\r",
 											"        postman.setEnvironmentVariable(\"vsphereFlavorMapId\", jsonData.content[i].id);\r",
 											"    }\r",
 											"}"
@@ -497,7 +486,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "22b84ec2-b4a3-431e-9d91-fea32d072d81",
 										"exec": [
 											"var jsonData = JSON.parse(responseBody);",
 											"",
@@ -526,7 +514,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\"name\": \"vSphere Profile\",\n\t\"description\": \"vSphere flavor profile created through REST API\",\n\t\"flavorMapping\": {\n        \"tiny\": {\n            \"cpuCount\": 1,\n            \"memoryInMB\": 512\n        },        \n        \"small\": {\n            \"cpuCount\": 1,\n            \"memoryInMB\": 1024\n        },\n        \"medium\": {\n\t        \"cpuCount\": 1,\n            \"memoryInMB\": 2048\n        },\n        \"large\": {\n            \"cpuCount\": 2,\n            \"memoryInMB\": 4096\n        }\n\t},\n\t\"regionId\": \"{{vsphereeRegionLink}}\"\n\t}"
+									"raw": "{\n\t\"name\": \"vSphere Profile\",\n\t\"description\": \"vSphere flavor profile created through REST API\",\n\t\"flavorMapping\": {\n        \"extra large\": {\n            \"cpuCount\": 4,\n            \"memoryInMB\": 8192\n        },\n        \"tiny\": {\n            \"cpuCount\": 1,\n            \"memoryInMB\": 512\n        },        \n        \"small\": {\n            \"cpuCount\": 1,\n            \"memoryInMB\": 1024\n        },\n        \"medium\": {\n\t        \"cpuCount\": 1,\n            \"memoryInMB\": 2048\n        },\n        \"large\": {\n            \"cpuCount\": 2,\n            \"memoryInMB\": 4096\n        }\n\t},\n\t\"regionId\": \"{{vsphereeRegionLink}}\"\n\t}"
 								},
 								"url": {
 									"raw": "{{url-home}}/iaas/api/flavor-profiles/{{vsphereFlavorMapId}}",
@@ -548,7 +536,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "f1b2a06e-c504-4c8b-9944-347fc7d6cfbb",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -558,19 +545,16 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ec3a2c1d-87be-4829-b3db-4d4ab86798cc",
 								"type": "text/javascript",
 								"exec": [
 									""
 								]
 							}
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
-					"name": "04 - Create a Blueprint",
+					"name": "04 - Create a Cloud Template",
 					"item": [
 						{
 							"name": "01 - Get Projects",
@@ -578,7 +562,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "97ff1a0a-e3a7-46a9-98c4-7e33bf8c5e55",
 										"exec": [
 											"var jsonData = JSON.parse(responseBody);",
 											"",
@@ -617,20 +600,17 @@
 							"response": []
 						},
 						{
-							"name": "02 - Get Blueprints",
+							"name": "02 - Get Cloud Templates",
 							"event": [
 								{
 									"listen": "test",
 									"script": {
-										"id": "eb065bd1-696c-4d35-8b78-8368e262837f",
 										"exec": [
 											"var jsonData = JSON.parse(responseBody);\r",
-											"\r",
 											"for ( i=0; i<jsonData.content.length; i++) {\r",
-											"    if (jsonData.content[i].name.has(\"Ubuntu 18\")) {\r",
-											"\r",
-											"        postman.setEnvironmentVariable(\"blueprintId\", jsonData.content[i].id);\r",
-											"    }\r",
+											"        if (jsonData.content[i].contentSourcePath.has(\"blueprints/ubuntu-18/blueprint.yaml\")) {\r",
+											"            postman.setEnvironmentVariable(\"templateId\", jsonData.content[i].id);\r",
+											"        }\r",
 											"}"
 										],
 										"type": "text/javascript"
@@ -661,12 +641,11 @@
 							"response": []
 						},
 						{
-							"name": "03 - Get Ubuntu 18 Blueprint",
+							"name": "03 - Get Ubuntu 18 Template",
 							"event": [
 								{
 									"listen": "test",
 									"script": {
-										"id": "d2de1be5-25c9-417e-8d9a-bdbb81f74ee9",
 										"exec": [
 											""
 										],
@@ -683,7 +662,7 @@
 									}
 								],
 								"url": {
-									"raw": "{{url-home}}/blueprint/api/blueprints/{{blueprintId}}",
+									"raw": "{{url-home}}/blueprint/api/blueprints/{{templateId}}",
 									"host": [
 										"{{url-home}}"
 									],
@@ -691,19 +670,18 @@
 										"blueprint",
 										"api",
 										"blueprints",
-										"{{blueprintId}}"
+										"{{templateId}}"
 									]
 								}
 							},
 							"response": []
 						},
 						{
-							"name": "04 - Create Blueprint",
+							"name": "04 - Create Cloud Template",
 							"event": [
 								{
 									"listen": "test",
 									"script": {
-										"id": "e653e870-a1c8-4a45-9ecb-f1db83144974",
 										"exec": [
 											"var jsonData = JSON.parse(responseBody);",
 											"",
@@ -744,12 +722,10 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
-					"name": "05 - Deploy a Blueprint",
+					"name": "05 - Deploy a Cloud Template",
 					"item": [
 						{
 							"name": "01 - Get Projects",
@@ -757,7 +733,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "9296e5ae-6c2c-4cdd-a9d0-6a45a51e9525",
 										"exec": [
 											"var jsonData = JSON.parse(responseBody);",
 											"",
@@ -796,12 +771,11 @@
 							"response": []
 						},
 						{
-							"name": "02 - Get Blueprints",
+							"name": "02 - Get Cloud Templates",
 							"event": [
 								{
 									"listen": "test",
 									"script": {
-										"id": "7249461d-7a4d-4d8c-9e07-ad299b23ae3d",
 										"exec": [
 											"var jsonData = JSON.parse(responseBody);\r",
 											"\r",
@@ -840,12 +814,11 @@
 							"response": []
 						},
 						{
-							"name": "03 - Provision Blueprint",
+							"name": "03 - Provision Cloud Template",
 							"event": [
 								{
 									"listen": "test",
 									"script": {
-										"id": "4d039070-84d7-45fe-8d21-5c2dac2d2351",
 										"exec": [
 											""
 										],
@@ -883,9 +856,7 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "06 - Delete a Deployment",
@@ -896,7 +867,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "36046749-dd19-4ea7-8064-1d5c1c148a69",
 										"exec": [
 											"var jsonData = JSON.parse(responseBody);\r",
 											"\r",
@@ -961,9 +931,7 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "07 - Update an Image Mapping",
@@ -974,7 +942,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a704ed51-21ac-49e7-b5d9-502e73aa0541",
 										"exec": [
 											"var jsonData = JSON.parse(responseBody);",
 											"",
@@ -1025,7 +992,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "1bb4648d-3bb3-4443-b90f-d7af7ff9578a",
 										"exec": [
 											"var jsonData = JSON.parse(responseBody);",
 											"",
@@ -1088,7 +1054,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "2f5c7718-b3c9-4c1c-b3da-c95d526b5387",
 										"exec": [
 											"var jsonData = JSON.parse(responseBody);\r",
 											"\r",
@@ -1172,9 +1137,7 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "08 - Create a Network Profile",
@@ -1185,7 +1148,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "199f48a5-ae69-4b76-b1e6-9f9b9285f03f",
 										"exec": [
 											"var jsonData = JSON.parse(responseBody);",
 											"",
@@ -1236,7 +1198,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "68e85343-d522-4308-b0d2-5fe246580239",
 										"exec": [
 											" var jsonData = JSON.parse(responseBody);",
 											"",
@@ -1315,7 +1276,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "d03592f2-064d-454e-a979-28a28d16e1ff",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -1325,23 +1285,19 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "01845bde-fb3b-472c-b74a-557a51a2b72f",
 								"type": "text/javascript",
 								"exec": [
 									""
 								]
 							}
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				}
 			],
 			"event": [
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "b50b94ca-e7b6-487a-99b1-5b8b63225f2e",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -1351,22 +1307,19 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "ad4aea43-f57e-43c0-8680-151e0554e2cb",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		}
 	],
 	"event": [
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "951ed2be-7897-47da-b89f-89ea392c016e",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -1376,13 +1329,11 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "1f2c9307-df6a-4dde-8bb6-e38691258317",
 				"type": "text/javascript",
 				"exec": [
 					""
 				]
 			}
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }
