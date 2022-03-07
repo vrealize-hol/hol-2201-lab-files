@@ -1,0 +1,25 @@
+exports.handler = (context, inputs, callback) => {
+    var http = require('http');
+    var host = inputs.url.replace(/^https?:\/\//, '')
+ 
+    var options = {
+        host: host,
+        path: '/config.json',
+        method: 'GET'
+    }
+    var request = http.request(options, function(res) {
+        var jsonData = '';
+        res.on('data', function(chunk) {
+            jsonData += chunk;
+        });
+        res.on('end', function() {
+            var applicationVersionEncoded = JSON.parse(jsonData)['applicationVersion'];
+            return callback(null, Buffer.from(applicationVersionEncoded, 'base64').toString('ascii'));
+        });
+    });
+    request.on('error', function(e) {
+        console.log(e.message);
+    });
+     
+    request.end();
+}
