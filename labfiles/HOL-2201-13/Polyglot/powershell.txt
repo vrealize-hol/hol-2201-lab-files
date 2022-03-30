@@ -1,0 +1,8 @@
+function Handler($context, $inputs) {
+    $inputsString = $inputs | ConvertTo-Json -Compress
+    $url = $inputs.url
+    $response = Invoke-RestMethod -Uri "$url/config.json" -SkipCertificateCheck
+    $applicationVersionEncoded = $response.applicationVersion
+    $applicationVersion = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($applicationVersionEncoded))
+    return $applicationVersion
+}

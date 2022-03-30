@@ -1,0 +1,15 @@
+import json
+import urllib.request
+import ssl
+import base64
+ 
+def handler(context, inputs):
+    ssl._create_default_https_context = ssl._create_unverified_context
+    jsonOut = json.dumps(inputs, separators=(',', ':'))
+    webUrl = urllib.request.urlopen(format(inputs['url']) + '/config.json')
+    jsonData = webUrl.read()
+    data = json.loads(jsonData)
+    applicationVersionEncoded = data['applicationVersion']
+    applicationVersionBytes = base64.b64decode(applicationVersionEncoded)
+    return applicationVersionBytes.decode('ascii')
+    
