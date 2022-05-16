@@ -14,6 +14,8 @@ Do {
 Write-Output "$(Get-Date) Finished testing GitLab"
 
 # Create GitLab repos
+Write-VpodProgress "Creating GitLab repos" 'GOOD-6'
+Write-Output "$(Get-Date) Creating GitLab repos"
 Set-Location $LabStartupBaseFolder
 $curPath = Get-Location
 Get-ChildItem -path ".\repos" -Directory -Force | ForEach-Object {
@@ -29,7 +31,11 @@ Get-ChildItem -path ".\repos" -Directory -Force | ForEach-Object {
     Invoke-Command -ScriptBlock { git push -f -u origin main }
 }
 
+<#
 ###
+Write-VpodProgress "Configuring Tanzu" 'GOOD-6'
+Write-Output "$(Get-Date) Configuring Tanzu"
+
 # Clean kubeconfig
 $KUBECTL_CONFIG_FOLDER = "C:\Users\Administrator\.kube"
 If (Test-Path -Path $KUBECTL_CONFIG_FOLDER) { Remove-Item -Path $KUBECTL_CONFIG_FOLDER -Recurse -Force -Confirm:$false }
@@ -94,6 +100,10 @@ Do {
 # Clean kubeconfig
 Remove-Item -Path $KUBECTL_CONFIG_FOLDER -Recurse -Force -Confirm:$false
 
+#>
+
+## Added 5/16/22 by Gregg Parsons to cause vRA to redeploy pods.
+#Invoke-Plink -remoteHost vr-automation.corp.local -login root -passwd VMware1! -command '/opt/scripts/deploy.sh'
 
 ## Clear expired token for SaltStack
 Invoke-Plink -remoteHost saltstack.corp.local -login root -passwd VMware1! -command 'rm /var/cache/salt/master/auth_token.jwt'
