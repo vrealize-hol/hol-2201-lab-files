@@ -58,23 +58,23 @@ Do {
     kubectl apply -f $(Join-Path $LabStartupBaseFolder "build/vsphere/wcp/rainpole/tkc-dev-project.yaml") | Out-String | Write-Output
     if ($LastExitCode -ne 0) {
         kubectl vsphere login --vsphere-username $VSPHERE_WITH_TANZU_USERNAME --server=$VSPHERE_WITH_TANZU_CONTROL_PLANE_IP --tanzu-kubernetes-cluster-name $VSPHERE_WITH_TANZU_CLUSTER_NAME --tanzu-kubernetes-cluster-namespace $VSPHERE_WITH_TANZU_CLUSTER_NAMESPACE --insecure-skip-tls-verify | Out-Null
-        Start-Sleep -Seconds 20
+        LabStartup-Sleep $sleepSeconds
         Continue
     }
-    Start-Sleep -Seconds 20
+    LabStartup-Sleep $sleepSeconds
     $tkc = kubectl get tkc/$VSPHERE_WITH_TANZU_CLUSTER_NAME -n $VSPHERE_WITH_TANZU_CLUSTER_NAMESPACE -o json | ConvertFrom-Json
     Write-Output ("Worker Nodes: " + $tkc.spec.topology.workers.count)
 } While ($tkc.spec.topology.workers.count -lt 1)
 
 # Wait until 1 worker node is ready
 Do {
-    Start-Sleep -Seconds 20
+    LabStartup-Sleep $sleepSeconds
     Write-Output "Wait for worker node"
     kubectl config use-context $VSPHERE_WITH_TANZU_CONTROL_PLANE_IP | Out-String | Write-Output
     $tkc = kubectl get tkc/$VSPHERE_WITH_TANZU_CLUSTER_NAME -n $VSPHERE_WITH_TANZU_CLUSTER_NAMESPACE -o json | ConvertFrom-Json
     if ($LastExitCode -ne 0) {
         kubectl vsphere login --vsphere-username $VSPHERE_WITH_TANZU_USERNAME --server=$VSPHERE_WITH_TANZU_CONTROL_PLANE_IP --tanzu-kubernetes-cluster-name $VSPHERE_WITH_TANZU_CLUSTER_NAME --tanzu-kubernetes-cluster-namespace $VSPHERE_WITH_TANZU_CLUSTER_NAMESPACE --insecure-skip-tls-verify | Out-Null
-        Start-Sleep -Seconds 20
+        LabStartup-Sleep $sleepSeconds
         Continue
     }
     $workernodes = $null
@@ -102,8 +102,20 @@ Remove-Item -Path $KUBECTL_CONFIG_FOLDER -Recurse -Force -Confirm:$false
 
 #>
 
-## Added 5/16/22 by Gregg Parsons to cause vRA to redeploy pods.
-#Invoke-Plink -remoteHost vr-automation.corp.local -login root -passwd VMware1! -command '/opt/scripts/deploy.sh'
+## Added 5/16/22 by Gregg Parsons to force vRA to redeploy pods.
+Write-VpodProgress "Deploying vRA" 'GOOD-7'
+Write-Output "$(Get-Date) Checking status of initial vRA deployment"
+Do {
+    LabStartup-Sleep $sleepSeconds
+    $vra_deploy = Invoke-Plink -remoteHost vr-automation.corp.local -login root -passwd VMware1! -command 'vracli status deploy'
+    Write-Output "$(Get-Date) vRA Initial Deployment Check: $vra_deploy"
+    # if ($vra_deploy -ne "Deployment complete") { Continue }
+    # $vra_status = Invoke-Plink -remoteHost vr-automation.corp.local -login root -passwd VMware1! -command 'vracli status services'
+    # Write-Output "$(Get-Date) vRA Services Check $vra_status"
+} Until ($vra_deploy -eq "Deployment complete")
+
+Write-Output "$(Get-Date) Initiating vRA deployment again"
+cmd /c echo y | plink root@vr-automation.corp.local -pw VMware1! -noagent "nohup /opt/scripts/deploy.sh > /tmp/labstartup-deploy-2.out 2> /tmp/labstartup-deploy-2.err < /dev/null &"
 
 ## Clear expired token for SaltStack
 Invoke-Plink -remoteHost saltstack.corp.local -login root -passwd VMware1! -command 'rm /var/cache/salt/master/auth_token.jwt'
