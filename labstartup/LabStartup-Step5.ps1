@@ -102,7 +102,7 @@ Remove-Item -Path $KUBECTL_CONFIG_FOLDER -Recurse -Force -Confirm:$false
 
 #>
 
-
+<#
 ## Added 5/16/22 by Gregg Parsons to force vRA to redeploy pods.
 Write-VpodProgress "Deploying vRA" 'GOOD-7'
 Write-Output "$(Get-Date) Checking status of initial vRA deployment"
@@ -117,7 +117,7 @@ Do {
 
 Write-Output "$(Get-Date) Initiating vRA deployment again"
 cmd /c echo y | plink root@vr-automation.corp.local -pw VMware1! -noagent "nohup /opt/scripts/deploy.sh > /tmp/labstartup-deploy-2.out 2> /tmp/labstartup-deploy-2.err < /dev/null &"
-
+#>
 
 ## Clear expired token for SaltStack
 Invoke-Plink -remoteHost saltstack.corp.local -login root -passwd VMware1! -command 'rm /var/cache/salt/master/auth_token.jwt'
