@@ -89,10 +89,12 @@ $allpods.items | where-object { $_.status.phase -eq "Failed" -and $_.status.reas
 }
 
 # Deploy app
+Write-Output "Deploying the cadvisor app"
 kubectl config use-context $VSPHERE_WITH_TANZU_CLUSTER_NAME
 Do {
     kubectl apply -f (Join-Path $LabStartupBaseFolder "build/vsphere/wcp/rainpole/dev-project/cadvisor.yml")
-    Start-Sleep -Seconds 10
+    Write-Output "Still deploying the cadvisor app"
+    LabStartup-Sleep $sleepSeconds
     $pods = kubectl get pods -n kube-system -o json | ConvertFrom-Json
 } While (($pods.items.metadata.name -like "cadvisor*").Count -eq 0)
 
