@@ -31,7 +31,6 @@ Get-ChildItem -path ".\repos" -Directory -Force | ForEach-Object {
     Invoke-Command -ScriptBlock { git push -f -u origin main }
 }
 
-<#
 ###
 Write-VpodProgress "Configuring Tanzu" 'GOOD-6'
 Write-Output "$(Get-Date) Configuring Tanzu"
@@ -101,7 +100,6 @@ Do {
 
 # Clean kubeconfig
 Remove-Item -Path $KUBECTL_CONFIG_FOLDER -Recurse -Force -Confirm:$false
-#>
 
 <#
 ## Added 5/16/22 by Gregg Parsons to force vRA to redeploy pods.
