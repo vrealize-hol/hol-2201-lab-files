@@ -1,5 +1,5 @@
 name: Deploy vSphere K8s namespace
-version: 1
+version: 2
 formatVersion: 1
 inputs:
   ns-name:
