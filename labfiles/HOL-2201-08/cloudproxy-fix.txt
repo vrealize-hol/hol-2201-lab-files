@@ -1,6 +1,14 @@
-Cloud Proxy Credentials are: root/VMware1!
-From the controlcenter command line, run c:\hol\tools\pscp vcsa-01a_CA-root.cer root@vr-operations-cp.corp.local:/tmp.
-Putty to the vr-operations-cp server.
-Navigate to the /tmp folder and run the openssl x509 -outform der -in /tmp/vcsa-01a_CA-root.cer -out /tmp/vcsa-01a_CA-root.der command.
-Run the keytool -importcert -alias vcsa-01a_CA-root -keystore /usr/java/jre-vmware/lib/security/cacerts -storepass changeit -file /tmp/vcsa-01a_CA-root.der -noprompt command.
-Reboot the vr-operation-cp node.
+Open a command prompt on the controlcenter.
+Type c:\hol\tools\pscp c:\hol\ssl\vcsa-01a_CA-root.cer root@vr-operations-cp.corp.local:/tmp and press enter.
+Type c:\hol\tools\pscp c:\hol\ssl\vcsa-01b_CA-root.cer root@vr-operations-cp.corp.local:/tmp and press enter.
+Use PuTTy to connect to vr-operations-cp.
+Type cd /tmp and press enter.
+Type openssl x509 -outform der -in /tmp/vcsa-01a_CA-root.cer -out /tmp/vcsa-01a_CA-root.der and press enter.
+Type openssl x509 -outform der -in /tmp/vcsa-01b_CA-root.cer -out /tmp/vcsa-01b_CA-root.der and press enter.
+Type keytool -importcert -alias vcsa-01a_CA-root -keystore /usr/java/jre-vmware/lib/security/cacerts -storepass changeit -file /tmp/vcsa-01a_CA-root.der -noprompt and press enter.
+Type keytool -importcert -alias vcsa-01b_CA-root -keystore /usr/java/jre-vmware/lib/security/cacerts -storepass changeit -file /tmp/vcsa-01b_CA-root.der -noprompt and press enter.
+Type reboot and press enter.
+
+To check the certificates are there, see:
+
+keytool -keystore /usr/java/jre-vmware/lib/security/cacerts -storepass changeit -list | grep vcsa
